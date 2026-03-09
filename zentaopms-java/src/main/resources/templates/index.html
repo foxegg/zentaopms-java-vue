@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ZenTao PMS - 禅道项目管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+        .nav a { display: inline-block; padding: 10px 20px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; }
+        .nav a:hover { background: #0052a3; }
+        .modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .module { padding: 15px; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .module h3 { font-size: 14px; color: #333; margin-bottom: 5px; }
+        .module p { font-size: 12px; color: #999; }
+        .module a { color: #0066cc; text-decoration: none; font-size: 12px; }
+        .footer { margin-top: 40px; color: #999; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ZenTao PMS - Spring Boot 版</h1>
+        <p class="subtitle">禅道项目管理系统 Java 版，功能与 PHP 版完全一致</p>
+
+        <div class="nav">
+            <a href="/login">登录</a>
+            <a href="/api/product/list">产品</a>
+            <a href="/api/project/list">项目</a>
+            <a href="/api/execution/list?projectID=1">执行</a>
+            <a href="/api/task/list">任务</a>
+            <a href="/api/bug/list">Bug</a>
+            <a href="/api/story/list">需求</a>
+            <a href="/api/todo/list">待办</a>
+            <a href="/api/my/index">我的地盘</a>
+        </div>
+
+        <div class="modules">
+            <div class="module"><h3>产品</h3><p>产品管理</p><a href="/api/product/list">/api/product</a></div>
+            <div class="module"><h3>项目</h3><p>项目管理</p><a href="/api/project/list">/api/project</a></div>
+            <div class="module"><h3>执行/迭代</h3><p>Sprint 管理</p><a href="/api/execution/list?projectID=1">/api/execution</a></div>
+            <div class="module"><h3>任务</h3><p>任务管理</p><a href="/api/task/list">/api/task</a></div>
+            <div class="module"><h3>Bug</h3><p>缺陷跟踪</p><a href="/api/bug/list">/api/bug</a></div>
+            <div class="module"><h3>需求</h3><p>用户故事</p><a href="/api/story/list">/api/story</a></div>
+            <div class="module"><h3>待办</h3><p>待办事项</p><a href="/api/todo/list">/api/todo</a></div>
+            <div class="module"><h3>构建</h3><p>版本构建</p><a href="/api/build/list">/api/build</a></div>
+            <div class="module"><h3>文档</h3><p>文档管理</p><a href="/api/doc/libs/product/1">/api/doc</a></div>
+            <div class="module"><h3>用例</h3><p>测试用例</p><a href="/api/testcase/list">/api/testcase</a></div>
+            <div class="module"><h3>用户</h3><p>用户管理</p><a href="/api/user/list">/api/user</a></div>
+            <div class="module"><h3>组织</h3><p>公司部门</p><a href="/api/company/list">/api/company</a></div>
+        </div>
+
+        <div class="footer">
+            <p>ZenTao PMS 22.0 | Spring Boot 3.2 | 数据库表前缀 zt_ | 兼容 PHP 版数据</p>
+        </div>
+    </div>
+</body>
+</html>

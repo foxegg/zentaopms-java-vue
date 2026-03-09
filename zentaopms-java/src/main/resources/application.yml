@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: zentaopms
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/zentao?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ''
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        default_schema: zentao
+    open-in-view: false
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    cache: false
+
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+# ZenTao 兼容配置
+zentao:
+  version: 22.0.0
+  db:
+    prefix: zt_
+  upload:
+    path: ${user.dir}/data/upload/1
+  default:
+    lang: zh-cn
+    theme: default
+    vision: rnd
+  cookie:
+    life: 2592000
+  timezone: Asia/Shanghai
+  jwt:
+    secret: zentaopms-jwt-secret-key-256bits-required-for-hs256
+    expiration: 2592000000  # 30 days in ms

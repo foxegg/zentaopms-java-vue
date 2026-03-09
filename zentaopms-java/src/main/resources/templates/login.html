@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>登录 - ZenTao PMS</title>
+</head>
+<body>
+    <h1>ZenTao PMS 登录</h1>
+    <form id="loginForm">
+        <p>
+            <label>账号：<input type="text" name="account" required/></label>
+        </p>
+        <p>
+            <label>密码：<input type="password" name="password" required/></label>
+        </p>
+        <p>
+            <button type="submit">登录</button>
+        </p>
+    </form>
+    <div id="message"></div>
+    <script>
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const data = {
+                account: form.account.value,
+                password: form.password.value
+            };
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+                if (json.result === 'success') {
+                    localStorage.setItem('token', json.token);
+                    document.getElementById('message').textContent = '登录成功！';
+                    setTimeout(() => location.href = '/', 1000);
+                } else {
+                    document.getElementById('message').textContent = json.message || '登录失败';
+                }
+            } catch (err) {
+                document.getElementById('message').textContent = '请求失败: ' + err.message;
+            }
+        };
+    </script>
+</body>
+</html>

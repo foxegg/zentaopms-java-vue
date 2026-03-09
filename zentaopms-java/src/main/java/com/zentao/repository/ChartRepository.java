@@ -1,0 +1,10 @@
+package com.zentao.repository;
+
+import com.zentao.entity.Chart;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface ChartRepository extends JpaRepository<Chart, Integer> {
+    List<Chart> findByDeletedOrderByIdAsc(int deleted);
+}

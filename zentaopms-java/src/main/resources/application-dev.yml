@@ -1,0 +1,11 @@
+# 开发环境配置 - 可使用 H2 内存数据库测试
+spring:
+  datasource:
+    url: jdbc:h2:mem:zentao;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create  # 开发时自动建表，生产环境使用 none
+    database-platform: org.hibernate.dialect.H2Dialect
