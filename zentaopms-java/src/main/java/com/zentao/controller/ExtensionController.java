@@ -33,6 +33,7 @@ public class ExtensionController {
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return extensionService.getById(id)
                 .map(e -> ResponseEntity.ok(Map.of("result", "success", "data", e)))
                 .orElse(ResponseEntity.notFound().build());
@@ -48,6 +49,8 @@ public class ExtensionController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Extension extension) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (extensionService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         extension.setId(id);
         extensionService.update(extension);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -56,6 +59,8 @@ public class ExtensionController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (extensionService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         extensionService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

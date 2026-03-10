@@ -15,4 +15,6 @@ public interface ProjectStoryRepository extends JpaRepository<ProjectStory, Inte
     Optional<ProjectStory> findByProjectAndStory(int projectId, int storyId);
 
     void deleteByProjectAndStory(int projectId, int storyId);
+
+    List<ProjectStory> findByStoryInAndProjectIn(List<Integer> storyIds, List<Integer> projectIds);
 }

@@ -5,11 +5,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/** 与 PHP common 一致：公共入口，index 返回成功 */
 @RestController
 @RequestMapping("/api/common")
 public class CommonController {
-    @GetMapping({ "/list", "" })
-    public ResponseEntity<Map<String, Object>> list() { return PlaceholderResponses.emptyList(); }
+
+    @GetMapping({ "/index", "/list", "" })
+    public ResponseEntity<Map<String, Object>> index() {
+        return ResponseEntity.ok(Map.of("result", "success"));
+    }
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable Object id) { return PlaceholderResponses.emptyView(id); }
     @PostMapping({ "/create", "" })

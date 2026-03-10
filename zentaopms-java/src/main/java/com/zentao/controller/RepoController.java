@@ -27,6 +27,7 @@ public class RepoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return repoService.getById(id)
                 .map(r -> ResponseEntity.ok(Map.of("result", "success", "data", r)))
                 .orElse(ResponseEntity.notFound().build());
@@ -40,6 +41,8 @@ public class RepoController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Repo repo) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (repoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         repo.setId(id);
         repoService.update(repo);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -47,28 +50,31 @@ public class RepoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (repoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         repoService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
-    /** 创建代码分支，与 PHP repo createBranch 对应（objectID 为 taskID） */
+    /** 创建代码分支，与 PHP repo createBranch 对应（objectID 为 taskID）；objectID≤0 或 repoID≤0 时返回 400 */
     @PostMapping("/createBranch")
     public ResponseEntity<Map<String, Object>> createBranch(@RequestParam(defaultValue = "0") int objectID,
             @RequestParam(defaultValue = "0") int repoID) {
-        if (objectID <= 0) return ResponseEntity.badRequest().build();
+        if (objectID <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid objectID"));
+        if (repoID <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid repoID"));
         repoService.createBranch(objectID, repoID);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
-    /** 解除代码分支关联，与 PHP repo unlinkBranch 对应 */
+    /** 解除代码分支关联，与 PHP repo unlinkBranch 对应；objectID≤0 时返回 400 */
     @PostMapping("/unlinkBranch")
     public ResponseEntity<Map<String, Object>> unlinkBranch(@RequestParam(defaultValue = "0") int objectID) {
-        if (objectID <= 0) return ResponseEntity.badRequest().build();
+        if (objectID <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid objectID"));
         repoService.unlinkBranch(objectID);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
-    /** 提交日志列表，对应 PHP repo log；暂无真实 git 集成时返回空列表 */
+    /** 提交日志列表，对应 PHP repo log；id≤0 时返回 404，暂无真实 git 集成时返回空列表 */
     @GetMapping("/{id}/log")
     public ResponseEntity<Map<String, Object>> log(
             @PathVariable int id,
@@ -76,6 +82,7 @@ public class RepoController {
             @RequestParam(defaultValue = "0") int objectID,
             @RequestParam(defaultValue = "1") int pageID,
             @RequestParam(defaultValue = "50") int recPerPage) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         if (repoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(Map.of(
                 "result", "success",

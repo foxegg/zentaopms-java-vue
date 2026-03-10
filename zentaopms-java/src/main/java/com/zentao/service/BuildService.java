@@ -1,14 +1,22 @@
 package com.zentao.service;
 
+import com.zentao.entity.Bug;
 import com.zentao.entity.Build;
+import com.zentao.entity.Story;
+import com.zentao.repository.BugRepository;
 import com.zentao.repository.BuildRepository;
+import com.zentao.repository.StoryRepository;
+import com.zentao.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -18,6 +26,8 @@ public class BuildService {
 
     private final BuildRepository buildRepository;
     private final ActionService actionService;
+    private final StoryRepository storyRepository;
+    private final BugRepository bugRepository;
 
     public Optional<Build> getById(int id) {
         return buildRepository.findById(id).filter(b -> b.getDeleted() == 0);
@@ -35,13 +45,43 @@ public class BuildService {
         return buildRepository.findByProductAndDeleted(productId, 0);
     }
 
+    /** 全部构建列表（未删除），无 project/product/execution 时与 PHP getList 一致 */
+    public List<Build> getList() {
+        return buildRepository.findByDeletedOrderByIdDesc(0);
+    }
+
+    /** 构建 id->name 下拉用，与 PHP build getBuildPairs 一致；product 为 0 时返回空 */
+    public Map<Integer, String> getPairs(int productId) {
+        if (productId <= 0) return Map.of();
+        List<Build> list = getByProduct(productId);
+        return list.stream().collect(Collectors.toMap(Build::getId, b -> b.getName() != null ? b.getName() : "", (a, b) -> a));
+    }
+
+    /** 按构建 ID 列表返回 id→name，与 PHP build getBuildPairs(..., buildIdList) 一致；空列表返回空 Map */
+    public Map<Integer, String> getPairsByList(List<Integer> buildIdList) {
+        if (buildIdList == null || buildIdList.isEmpty()) return Map.of();
+        List<Build> list = buildRepository.findAllById(buildIdList);
+        return list.stream()
+                .filter(b -> b.getDeleted() == 0)
+                .collect(Collectors.toMap(Build::getId, b -> b.getName() != null ? b.getName() : "", (a, b) -> a));
+    }
+
+    /** 与 PHP 一致：创建时设置 createdBy、createdDate（当前用户与时间） */
     public Build create(Build build) {
         build.setDeleted(0);
+        build.setCreatedBy(getCurrentAccount());
+        build.setCreatedDate(LocalDateTime.now());
         return buildRepository.save(build);
     }
 
     public Build update(Build build) {
         return buildRepository.save(build);
+    }
+
+    private static String getCurrentAccount() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal up) return up.getUsername();
+        return "";
     }
 
     public void delete(int buildId) {
@@ -142,6 +182,22 @@ public class BuildService {
             if (bid != null && bid > 0) actionService.create("bug", bid, "unlinkedfrombuild", "", String.valueOf(buildID));
         }
         return true;
+    }
+
+    /** 获取构建关联的需求列表，与 PHP build 查看需求一致 */
+    public List<Story> getStoriesByBuild(int buildId) {
+        Build b = getById(buildId).orElse(null);
+        if (b == null || b.getStories() == null || b.getStories().isBlank()) return List.of();
+        List<Integer> ids = idsToList(b.getStories()).stream().filter(s -> s.matches("\\d+")).map(Integer::parseInt).toList();
+        return ids.isEmpty() ? List.of() : storyRepository.findByIdIn(ids);
+    }
+
+    /** 获取构建关联的缺陷列表，与 PHP build 查看缺陷一致 */
+    public List<Bug> getBugsByBuild(int buildId) {
+        Build b = getById(buildId).orElse(null);
+        if (b == null || b.getBugs() == null || b.getBugs().isBlank()) return List.of();
+        List<Integer> ids = idsToList(b.getBugs()).stream().filter(s -> s.matches("\\d+")).map(Integer::parseInt).toList();
+        return ids.isEmpty() ? List.of() : bugRepository.findAllById(ids);
     }
 
     private static List<String> idsToList(String raw) {

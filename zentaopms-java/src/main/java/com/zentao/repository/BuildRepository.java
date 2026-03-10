@@ -12,4 +12,6 @@ public interface BuildRepository extends JpaRepository<Build, Integer> {
     List<Build> findByExecutionAndDeleted(int executionId, int deleted);
 
     List<Build> findByProductAndDeleted(int productId, int deleted);
+
+    List<Build> findByDeletedOrderByIdDesc(int deleted);
 }

@@ -1,33 +1,34 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>权限组</h1>
+      <h1>{{ groupLang.common }}</h1>
     </div>
     <div class="table-wrap" v-if="!loading">
       <table class="data-table">
         <thead>
           <tr>
             <th>ID</th>
-            <th>名称</th>
-            <th>操作</th>
+            <th>{{ commonLang.name }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="g in list" :key="g.id">
             <td>{{ g.id }}</td>
             <td>{{ g.name }}</td>
-            <td><router-link :to="`/group/${g.id}`" class="btn">查看</router-link></td>
+            <td><router-link :to="`/group/${g.id}`" class="btn">{{ commonLang.view }}</router-link></td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getGroupList } from '@/api/group'
+import { common as commonLang, group as groupLang } from '@/lang/zh-cn'
 
 const list = ref([])
 const loading = ref(true)

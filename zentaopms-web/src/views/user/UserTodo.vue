@@ -3,10 +3,10 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>待办</th>
-          <th>任务</th>
-          <th>Bug</th>
-          <th>需求</th>
+          <th>{{ todoLang.common }}</th>
+          <th>{{ taskLang.common }}</th>
+          <th>{{ bugLang.common }}</th>
+          <th>{{ storyLang.common }}</th>
         </tr>
       </thead>
       <tbody>
@@ -18,14 +18,15 @@
         </tr>
       </tbody>
     </table>
-    <p class="muted">待办汇总（任务 / Bug / 需求）</p>
+    <p class="muted">{{ todoLang.summaryLine }}</p>
   </div>
-  <p v-else>加载中...</p>
+  <p v-else>{{ commonLang.loading }}</p>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { getUserTodo } from '@/api/user'
+import { common as commonLang, todo as todoLang, task as taskLang, bug as bugLang, story as storyLang } from '@/lang/zh-cn'
 
 const props = defineProps({ user: Object })
 const loading = ref(true)

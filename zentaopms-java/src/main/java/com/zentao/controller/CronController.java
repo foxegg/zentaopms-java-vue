@@ -30,6 +30,7 @@ public class CronController {
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return cronService.getById(id)
                 .map(c -> ResponseEntity.ok(Map.of("result", "success", "data", c)))
                 .orElse(ResponseEntity.notFound().build());
@@ -45,6 +46,8 @@ public class CronController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Cron cron) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (cronService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         cron.setId(id);
         cronService.update(cron);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -53,6 +56,8 @@ public class CronController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (cronService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         cronService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
@@ -60,6 +65,8 @@ public class CronController {
     @PutMapping("/{id}/toggle")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> toggle(@PathVariable int id, @RequestBody Map<String, String> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (cronService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Cron c = cronService.toggle(id, body != null ? body.get("status") : null);
         return ResponseEntity.ok(Map.of("result", "success", "data", c));
     }
@@ -67,6 +74,8 @@ public class CronController {
     @PostMapping("/{id}/run")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> run(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (cronService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Cron c = cronService.run(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", c));
     }

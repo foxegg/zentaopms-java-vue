@@ -1,16 +1,16 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>扩展与集成</h1>
+      <h1>{{ extensionLang.title }}</h1>
     </div>
-    <p class="mb-2">以下模块与 PHP 端一一对应，当前为占位实现，功能待后续完善。</p>
+    <p class="mb-2">{{ extensionLang.descTip }}</p>
     <div class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
-            <th>模块</th>
-            <th>说明</th>
-            <th>状态</th>
+            <th>{{ extensionLang.module }}</th>
+            <th>{{ extensionLang.desc }}</th>
+            <th>{{ commonLang.status }}</th>
           </tr>
         </thead>
         <tbody>
@@ -29,6 +29,8 @@
 </template>
 
 <script setup>
+import { common as commonLang, extension as extensionLang } from '@/lang/zh-cn'
+
 const modules = [
   { id: 'ai', name: 'AI', desc: 'AI 应用', status: '占位' },
   { id: 'aiapp', name: 'AI 应用', desc: 'AI 应用扩展', status: '占位' },

@@ -1,18 +1,18 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>文档详情</h1>
-      <router-link to="/doc" class="btn">返回</router-link>
+      <h1>{{ docLang.viewDetail }}</h1>
+      <router-link to="/doc" class="btn">{{ commonLang.backList }}</router-link>
     </div>
     <div v-if="item" class="table-wrap">
       <table class="data-table">
         <tr><th>ID</th><td>{{ item.id }}</td></tr>
-        <tr><th>标题</th><td>{{ item.title }}</td></tr>
-        <tr v-if="item.content"><th>内容</th><td><pre class="doc-content">{{ item.content }}</pre></td></tr>
+        <tr><th>{{ docLang.title }}</th><td>{{ item.title }}</td></tr>
+        <tr v-if="item.content"><th>{{ docLang.content }}</th><td><pre class="doc-content">{{ item.content }}</pre></td></tr>
       </table>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else>不存在</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else>{{ commonLang.notFound }}</p>
   </div>
 </template>
 
@@ -20,6 +20,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getDocById } from '@/api/doc'
+import { common as commonLang, doc as docLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const item = ref(null)

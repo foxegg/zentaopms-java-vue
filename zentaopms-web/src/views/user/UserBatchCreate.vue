@@ -1,25 +1,26 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">批量创建用户</h1>
-      <router-link to="/user" class="btn">返回列表</router-link>
+      <h1 style="margin:0;">{{ userLang.batchCreateTitle }}</h1>
+      <router-link to="/user" class="btn">{{ commonLang.backList }}</router-link>
     </div>
     <div class="table-wrap">
-      <p class="mb-2">每行一个用户，账号、姓名、密码为必填。</p>
+      <p v-if="errorMsg" class="text-danger mb-2">{{ errorMsg }}</p>
+      <p class="mb-2">{{ userLang.batchCreateHint }}</p>
       <form @submit.prevent="onSubmit">
         <div class="form-actions mb-2">
-          <button type="button" class="btn" @click="addRow">+ 增加一行</button>
-          <button type="button" class="btn" @click="rows = []">清空</button>
+          <button type="button" class="btn" @click="addRow">{{ userLang.addRow }}</button>
+          <button type="button" class="btn" @click="rows = []">{{ userLang.clear }}</button>
         </div>
         <table class="data-table">
           <thead>
             <tr>
-              <th>账号 *</th>
-              <th>姓名 *</th>
-              <th>密码 *</th>
-              <th>邮箱</th>
-              <th>角色</th>
-              <th>部门ID</th>
+              <th>{{ userLang.account }} *</th>
+              <th>{{ userLang.realname }} *</th>
+              <th>{{ userLang.password }} *</th>
+              <th>{{ userLang.email }}</th>
+              <th>{{ userLang.role }}</th>
+              <th>{{ userLang.deptId }}</th>
               <th></th>
             </tr>
           </thead>
@@ -31,13 +32,13 @@
               <td><input v-model="row.email" type="email" class="w-full" /></td>
               <td><input v-model="row.role" placeholder="dev" class="w-full" /></td>
               <td><input v-model.number="row.dept" type="number" class="w-full" /></td>
-              <td><button type="button" class="btn btn-sm" @click="removeRow(i)">删除</button></td>
+              <td><button type="button" class="btn btn-sm" @click="removeRow(i)">{{ commonLang.delete }}</button></td>
             </tr>
           </tbody>
         </table>
-        <div v-if="!rows.length" class="py-2 text-muted">请点击「增加一行」后填写用户信息。</div>
+        <div v-if="!rows.length" class="py-2 text-muted">{{ userLang.emptyBatchCreateHint }}</div>
         <div class="form-actions mt-2">
-          <button type="submit" class="btn btn-primary" :disabled="!rows.length || submitting">保存</button>
+          <button type="submit" class="btn btn-primary" :disabled="!rows.length || submitting">{{ commonLang.save }}</button>
         </div>
       </form>
     </div>
@@ -48,10 +49,12 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { batchCreateUsers } from '@/api/user'
+import { common as commonLang, user as userLang } from '@/lang/zh-cn'
 
 const router = useRouter()
 const rows = ref([{ account: '', realname: '', password: '', email: '', role: 'dev', dept: 0 }])
 const submitting = ref(false)
+const errorMsg = ref('')
 
 function addRow() {
   rows.value.push({ account: '', realname: '', password: '', email: '', role: 'dev', dept: 0 })
@@ -75,10 +78,17 @@ async function onSubmit() {
       }
     })
   if (!users.length) return
+  errorMsg.value = ''
   submitting.value = true
   try {
-    await batchCreateUsers(users)
+    const res = await batchCreateUsers(users)
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
     router.push('/user')
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
   } finally {
     submitting.value = false
   }
@@ -90,4 +100,5 @@ async function onSubmit() {
 .mb-2 { margin-bottom: 0.5rem; }
 .mt-2 { margin-top: 0.5rem; }
 .text-muted { color: #666; }
+.text-danger { color: #c00; }
 </style>

@@ -30,6 +30,7 @@ public class WebhookController {
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return webhookService.getById(id)
                 .map(w -> ResponseEntity.ok(Map.of("result", "success", "data", w)))
                 .orElse(ResponseEntity.notFound().build());
@@ -45,6 +46,8 @@ public class WebhookController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Webhook webhook) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (webhookService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         webhook.setId(id);
         webhookService.update(webhook);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -53,13 +56,17 @@ public class WebhookController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (webhookService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         webhookService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
+    /** 与 PHP 一致；id≤0 时返回 404 */
     @GetMapping("/{id}/log")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> log(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(Map.of("result", "success", "data", List.of()));
     }
 }

@@ -20,23 +20,27 @@ public class NotifyController {
 
     private final NotifyService notifyService;
 
+    /** 与 PHP notify list 一致：status、createdBy 筛选，pageID、recPerPage 分页；按 createdBy 时分页并返回 pager */
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String createdBy,
-            @RequestParam(defaultValue = "0") int pageID,
+            @RequestParam(defaultValue = "1") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
-        List<Notify> list;
         if (createdBy != null && !createdBy.isEmpty()) {
-            list = notifyService.getByCreatedBy(createdBy, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
-        } else {
-            list = notifyService.getByStatus(status);
+            var page = notifyService.getPageByCreatedBy(createdBy, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
+            return ResponseEntity.ok(Map.of(
+                    "result", "success",
+                    "data", page.getContent(),
+                    "pager", Map.of("recTotal", page.getTotalElements(), "recPerPage", recPerPage, "pageID", pageID)));
         }
+        List<Notify> list = notifyService.getByStatus(status);
         return ResponseEntity.ok(Map.of("result", "success", "data", list));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return notifyService.getById(id)
                 .map(n -> ResponseEntity.ok(Map.of("result", "success", "data", n)))
                 .orElse(ResponseEntity.notFound().build());
@@ -44,6 +48,8 @@ public class NotifyController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (notifyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         notifyService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

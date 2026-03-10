@@ -26,12 +26,28 @@ public class TaskController {
     private final ExportService exportService;
     private final RepoService repoService;
 
+    @GetMapping("/pairs")
+    public ResponseEntity<Map<String, Object>> pairs(@RequestParam(required = false) String ids) {
+        List<Integer> idList = java.util.Collections.emptyList();
+        if (ids != null && !ids.isBlank()) {
+            idList = java.util.Arrays.stream(ids.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> { try { return Integer.parseInt(s); } catch (NumberFormatException e) { return null; } })
+                    .filter(i -> i != null && i > 0)
+                    .distinct()
+                    .toList();
+        }
+        return ResponseEntity.ok(Map.of("result", "success", "data", taskService.getPairsByIdList(idList)));
+    }
+
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(required = false) Integer project,
             @RequestParam(required = false) Integer execution,
             @RequestParam(required = false) String assignedTo,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
         org.springframework.data.jpa.domain.Specification<com.zentao.entity.Task> spec = (root, q, cb) -> {
@@ -40,6 +56,7 @@ public class TaskController {
             if (execution != null && execution > 0) preds.add(cb.equal(root.get("execution"), execution));
             if (assignedTo != null && !assignedTo.isEmpty()) preds.add(cb.equal(root.get("assignedTo"), assignedTo));
             if (status != null && !status.isEmpty()) preds.add(cb.equal(root.get("status"), status));
+            if (type != null && !type.isEmpty()) preds.add(cb.equal(root.get("type"), type));
             return preds.isEmpty() ? null : cb.and(preds.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
         var page = taskService.getList(spec, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
@@ -54,14 +71,18 @@ public class TaskController {
         ));
     }
 
+    /** 与 PHP 一致；id≤0 时返回 data: [] */
     @GetMapping("/{id}/efforts")
     public ResponseEntity<Map<String, Object>> efforts(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.of()));
         var efforts = taskEstimateService.getByTask(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", efforts));
     }
 
     @PostMapping("/{id}/recordWorkhour")
     public ResponseEntity<Map<String, Object>> recordWorkhour(@PathVariable int id, @RequestBody Map<String, Object> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         java.time.LocalDate date = body.get("date") != null ? java.time.LocalDate.parse(body.get("date").toString()) : java.time.LocalDate.now();
         java.math.BigDecimal consumed = body.get("consumed") != null ? new java.math.BigDecimal(body.get("consumed").toString()) : java.math.BigDecimal.ZERO;
         java.math.BigDecimal left = body.get("left") != null ? new java.math.BigDecimal(body.get("left").toString()) : java.math.BigDecimal.ZERO;
@@ -72,6 +93,7 @@ public class TaskController {
 
     @PutMapping("/effort/{estimateId}")
     public ResponseEntity<Map<String, Object>> editEffort(@PathVariable int estimateId, @RequestBody Map<String, Object> body) {
+        if (estimateId <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         var opt = taskEstimateService.getById(estimateId);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         var e = opt.get();
@@ -85,18 +107,22 @@ public class TaskController {
 
     @DeleteMapping("/effort/{estimateId}")
     public ResponseEntity<Map<String, Object>> deleteWorkhour(@PathVariable int estimateId) {
+        if (estimateId <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         taskEstimateService.delete(estimateId);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
+    /** 与 PHP 一致；projectId≤0 时返回 data: [] */
     @GetMapping("/project/{projectId}")
     public ResponseEntity<Map<String, Object>> byProject(@PathVariable int projectId) {
+        if (projectId <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.<Task>of()));
         List<Task> tasks = taskService.getByProject(projectId);
         return ResponseEntity.ok(Map.of("result", "success", "data", tasks));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return taskService.getById(id)
                 .map(t -> ResponseEntity.ok(Map.of("result", "success", "data", t)))
                 .orElse(ResponseEntity.notFound().build());
@@ -110,6 +136,8 @@ public class TaskController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Task task) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         task.setId(id);
         taskService.update(task);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -117,18 +145,24 @@ public class TaskController {
 
     @PutMapping("/{id}/assignTo")
     public ResponseEntity<Map<String, Object>> assignTo(@PathVariable int id, @RequestBody Map<String, String> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Task task = taskService.assignTo(id, body.getOrDefault("assignedTo", ""));
         return ResponseEntity.ok(Map.of("result", "success", "data", task));
     }
 
     @PutMapping("/{id}/start")
     public ResponseEntity<Map<String, Object>> start(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Task task = taskService.start(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", task));
     }
 
     @PutMapping("/{id}/finish")
     public ResponseEntity<Map<String, Object>> finish(@PathVariable int id, @RequestBody Map<String, Object> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         java.math.BigDecimal consumed = body.get("consumed") != null ? new java.math.BigDecimal(body.get("consumed").toString()) : null;
         java.math.BigDecimal left = body.get("left") != null ? new java.math.BigDecimal(body.get("left").toString()) : null;
         Task task = taskService.finish(id, consumed, left);
@@ -137,36 +171,48 @@ public class TaskController {
 
     @PutMapping("/{id}/pause")
     public ResponseEntity<Map<String, Object>> pause(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Task task = taskService.pause(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", task));
     }
 
     @PutMapping("/{id}/restart")
     public ResponseEntity<Map<String, Object>> restart(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Task task = taskService.restart(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", task));
     }
 
     @PutMapping("/{id}/close")
     public ResponseEntity<Map<String, Object>> close(@PathVariable int id, @RequestBody Map<String, String> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Task task = taskService.close(id, body != null ? body.get("closedReason") : null);
         return ResponseEntity.ok(Map.of("result", "success", "data", task));
     }
 
     @PutMapping("/{id}/cancel")
     public ResponseEntity<Map<String, Object>> cancel(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Task task = taskService.cancel(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", task));
     }
 
     @PutMapping("/{id}/activate")
     public ResponseEntity<Map<String, Object>> activate(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Task task = taskService.activate(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", task));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         taskService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
@@ -203,7 +249,10 @@ public class TaskController {
 
     @PutMapping("/{id}/confirmStoryChange")
     public ResponseEntity<Map<String, Object>> confirmStoryChange(@PathVariable int id, @RequestBody Map<String, Object> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         int storyID = body != null && body.get("storyID") instanceof Number n ? n.intValue() : 0;
+        if (storyID <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid storyID"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Task task = taskService.confirmStoryChange(id, storyID);
         return ResponseEntity.ok(Map.of("result", "success", "data", task));
     }
@@ -231,20 +280,26 @@ public class TaskController {
     }
 
     @PostMapping("/manageTeam")
-    public ResponseEntity<Map<String, Object>> manageTeam(@RequestParam int executionID, @RequestParam int taskID, @RequestBody Map<String, Object> body) {
-        taskService.getById(taskID).orElseThrow(() -> new RuntimeException("任务不存在"));
+    public ResponseEntity<Map<String, Object>> manageTeam(@RequestParam(required = false, defaultValue = "0") int executionID, @RequestParam(required = false, defaultValue = "0") int taskID, @RequestBody Map<String, Object> body) {
+        if (executionID <= 0 || taskID <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid executionID or taskID"));
+        if (taskService.getById(taskID).isEmpty()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
     @PostMapping("/{id}/createBranch")
     public ResponseEntity<Map<String, Object>> createBranch(@PathVariable int id, @RequestBody Map<String, Object> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         int repoID = body != null && body.get("repoID") != null ? ((Number) body.get("repoID")).intValue() : 0;
+        if (repoID <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid repoID"));
         repoService.createBranch(id, repoID);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
     @PostMapping("/{id}/unlinkBranch")
     public ResponseEntity<Map<String, Object>> unlinkBranch(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (taskService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         repoService.unlinkBranch(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

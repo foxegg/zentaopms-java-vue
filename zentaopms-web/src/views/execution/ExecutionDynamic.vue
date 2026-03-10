@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">执行动态 · {{ execution?.name || '' }}</h1>
-      <router-link v-if="execution" :to="`/execution/${execution.id}`" class="btn">返回执行</router-link>
+      <h1 style="margin:0;">{{ executionLang.dynamicTitle }} · {{ execution?.name || '' }}</h1>
+      <router-link v-if="execution" :to="`/execution/${execution.id}`" class="btn">{{ executionLang.backExecution }}</router-link>
     </div>
     <div v-if="execution && !loading" class="table-wrap">
       <table class="data-table" v-if="list.length">
         <thead>
-          <tr><th>日期</th><th>操作</th><th>对象</th><th>详情</th></tr>
+          <tr><th>{{ executionLang.date }}</th><th>{{ executionLang.action }}</th><th>{{ executionLang.object }}</th><th>{{ executionLang.detail }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="a in list" :key="a.id">
@@ -18,15 +18,15 @@
           </tr>
         </tbody>
       </table>
-      <p v-else>暂无动态</p>
+      <p v-else>{{ commonLang.noData }}</p>
       <div class="pager mt-2" v-if="pager && pager.recTotal > 0">
-        <span>共 {{ pager.recTotal }} 条</span>
-        <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">上一页</button>
-        <span>第 {{ pageID }} 页</span>
-        <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">下一页</button>
+        <span>{{ commonLang.totalCount.replace('{total}', pager.recTotal) }}</span>
+        <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">{{ commonLang.prevPage }}</button>
+        <span>{{ commonLang.pageNum.replace('{n}', pageID) }}</span>
+        <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">{{ commonLang.nextPage }}</button>
       </div>
     </div>
-    <p v-else-if="loading">加载中...</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
   </div>
 </template>
 
@@ -34,6 +34,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getExecutionById, getExecutionDynamic } from '@/api/execution'
+import { common as commonLang, execution as executionLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const executionId = computed(() => Number(route.params.id))

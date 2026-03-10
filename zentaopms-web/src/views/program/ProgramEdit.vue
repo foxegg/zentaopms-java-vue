@@ -1,23 +1,24 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>编辑项目集</h1>
-      <router-link :to="`/program/${programId}`" class="btn">返回详情</router-link>
+      <h1>{{ programLang.edit }}</h1>
+      <router-link :to="`/program/${programId}`" class="btn">{{ commonLang.backDetail }}</router-link>
     </div>
     <div class="table-wrap" v-if="form">
+      <p v-if="errorMsg" class="text-danger">{{ errorMsg }}</p>
       <form @submit.prevent="onSubmit">
         <div class="form-group">
-          <label>名称 *</label>
+          <label>{{ programLang.name }} *</label>
           <input v-model="form.name" required />
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting">保存</button>
-          <router-link :to="`/program/${programId}`" class="btn">取消</router-link>
+          <button type="submit" class="btn btn-primary" :disabled="submitting">{{ commonLang.save }}</button>
+          <router-link :to="`/program/${programId}`" class="btn">{{ commonLang.cancel }}</router-link>
         </div>
       </form>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else>项目集不存在</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else>{{ programLang.notFound }}</p>
   </div>
 </template>
 
@@ -25,6 +26,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProgramById, updateProgram } from '@/api/program'
+import { program as programLang, common as commonLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,13 +34,14 @@ const programId = computed(() => Number(route.params.id))
 const form = ref(null)
 const loading = ref(true)
 const submitting = ref(false)
+const errorMsg = ref('')
 
 onMounted(async () => {
   const id = programId.value
   loading.value = true
   try {
     const res = await getProgramById(id)
-    const p = res.data
+    const p = res?.data ?? res
     if (p) form.value = { name: p.name }
   } finally {
     loading.value = false
@@ -47,12 +50,23 @@ onMounted(async () => {
 
 async function onSubmit() {
   if (!form.value) return
+  errorMsg.value = ''
   submitting.value = true
   try {
-    await updateProgram(programId.value, form.value)
+    const res = await updateProgram(programId.value, form.value)
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
     router.push(`/program/${programId.value}`)
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style scoped>
+.text-danger { color: #c00; margin-bottom: 0.5rem; }
+</style>

@@ -22,6 +22,9 @@
           <router-link to="/testtask">测试单</router-link>
           <router-link to="/testreport">测试报告</router-link>
           <router-link to="/testsuite">测试套件</router-link>
+          <router-link to="/caselib">用例库</router-link>
+          <router-link to="/chart">图表</router-link>
+          <router-link to="/weekly">周报</router-link>
           <router-link to="/report">报表</router-link>
           <router-link to="/metric">统计</router-link>
           <router-link to="/search">搜索</router-link>

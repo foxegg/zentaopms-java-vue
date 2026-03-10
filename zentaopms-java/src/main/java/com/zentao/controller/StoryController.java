@@ -22,12 +22,24 @@ public class StoryController {
     private final StoryService storyService;
     private final ExportService exportService;
 
+    /** 与 PHP story list 一致：product、status、branch、moduleID 筛选，pageID、recPerPage 分页 */
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(required = false) Integer product,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer branch,
+            @RequestParam(required = false) Integer moduleID,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
-        var page = storyService.getList(null, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
+        org.springframework.data.jpa.domain.Specification<Story> spec = (root, q, cb) -> {
+            List<jakarta.persistence.criteria.Predicate> preds = new java.util.ArrayList<>();
+            if (product != null && product > 0) preds.add(cb.equal(root.get("product"), product));
+            if (status != null && !status.isEmpty()) preds.add(cb.equal(root.get("status"), status));
+            if (branch != null && branch >= 0) preds.add(cb.equal(root.get("branch"), branch));
+            if (moduleID != null && moduleID > 0) preds.add(cb.equal(root.get("module"), moduleID));
+            return preds.isEmpty() ? null : cb.and(preds.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+        var page = storyService.getList(spec, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
         return ResponseEntity.ok(Map.of(
                 "result", "success",
                 "data", page.getContent(),
@@ -39,14 +51,44 @@ public class StoryController {
         ));
     }
 
+    /** 与 PHP/StoryService 一致：product≤0 返回空；planID>0 按计划过滤，hasParent=false 仅非父需求 */
+    @GetMapping("/pairs")
+    public ResponseEntity<Map<String, Object>> pairs(
+            @RequestParam(defaultValue = "0") int product,
+            @RequestParam(required = false, defaultValue = "0") int planID,
+            @RequestParam(required = false) Boolean hasParent) {
+        boolean hasParentVal = hasParent == null || hasParent;
+        return ResponseEntity.ok(Map.of("result", "success", "data", storyService.getPairs(product, planID, hasParentVal)));
+    }
+
+    /** 与 PHP/StoryService 一致：withEmptyOption=true 时结果含 0→""（请选择） */
+    @GetMapping("/pairsByList")
+    public ResponseEntity<Map<String, Object>> pairsByList(
+            @RequestParam(required = false) String ids,
+            @RequestParam(required = false, defaultValue = "false") boolean withEmptyOption) {
+        List<Integer> idList = ids != null && !ids.isBlank()
+                ? java.util.Arrays.stream(ids.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(s -> { try { return Integer.parseInt(s); } catch (NumberFormatException e) { return null; } })
+                        .filter(i -> i != null && i > 0)
+                        .distinct()
+                        .toList()
+                : List.of();
+        return ResponseEntity.ok(Map.of("result", "success", "data", storyService.getPairsByList(idList, withEmptyOption)));
+    }
+
+    /** 与 PHP 一致；productId≤0 时返回 data: [] */
     @GetMapping("/product/{productId}")
     public ResponseEntity<Map<String, Object>> byProduct(@PathVariable int productId) {
+        if (productId <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.<Story>of()));
         List<Story> stories = storyService.getByProduct(productId);
         return ResponseEntity.ok(Map.of("result", "success", "data", stories));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return storyService.getById(id)
                 .map(s -> ResponseEntity.ok(Map.of("result", "success", "data", s)))
                 .orElse(ResponseEntity.notFound().build());
@@ -60,6 +102,8 @@ public class StoryController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Story story) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         story.setId(id);
         storyService.update(story);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -67,37 +111,51 @@ public class StoryController {
 
     @PutMapping("/{id}/close")
     public ResponseEntity<Map<String, Object>> close(@PathVariable int id, @RequestBody Map<String, String> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Story story = storyService.close(id, body != null ? body.get("closedReason") : null);
         return ResponseEntity.ok(Map.of("result", "success", "data", story));
     }
 
     @PutMapping("/{id}/activate")
     public ResponseEntity<Map<String, Object>> activate(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Story story = storyService.activate(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", story));
     }
 
     @PutMapping("/{id}/assignTo")
     public ResponseEntity<Map<String, Object>> assignTo(@PathVariable int id, @RequestBody Map<String, String> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Story story = storyService.assignTo(id, body != null ? body.get("assignedTo") : null);
         return ResponseEntity.ok(Map.of("result", "success", "data", story));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         storyService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
     @PostMapping("/{id}/linkStory")
     public ResponseEntity<Map<String, Object>> linkStory(@PathVariable int id, @RequestBody Map<String, Object> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         int targetStoryID = body != null && body.get("targetStoryID") instanceof Number n ? n.intValue() : 0;
+        if (targetStoryID <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid targetStoryID"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Story story = storyService.linkStory(id, targetStoryID);
         return ResponseEntity.ok(Map.of("result", "success", "data", story));
     }
 
     @PostMapping("/{id}/unlinkStory")
     public ResponseEntity<Map<String, Object>> unlinkStory(@PathVariable int id, @RequestParam int targetStoryID) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (targetStoryID <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid targetStoryID"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Story story = storyService.unlinkStory(id, targetStoryID);
         return ResponseEntity.ok(Map.of("result", "success", "data", story));
     }
@@ -138,6 +196,24 @@ public class StoryController {
         List<Integer> storyIds = toIntList(body.get("storyIds"));
         int planID = body.get("planID") instanceof Number n ? n.intValue() : 0;
         storyService.batchChangePlan(storyIds, planID);
+        return ResponseEntity.ok(Map.of("result", "success"));
+    }
+
+    /** 批量修改需求所属模块，与 PHP story batchChangeModule 一致 */
+    @PostMapping("/batchChangeModule")
+    public ResponseEntity<Map<String, Object>> batchChangeModule(@RequestBody Map<String, Object> body) {
+        List<Integer> storyIds = toIntList(body.get("storyIds"));
+        int moduleID = body.get("moduleID") instanceof Number n ? n.intValue() : 0;
+        storyService.batchChangeModule(storyIds, moduleID);
+        return ResponseEntity.ok(Map.of("result", "success"));
+    }
+
+    /** 批量修改需求分支，与 PHP story batchChangeBranch 一致 */
+    @PostMapping("/batchChangeBranch")
+    public ResponseEntity<Map<String, Object>> batchChangeBranch(@RequestBody Map<String, Object> body) {
+        List<Integer> storyIds = toIntList(body.get("storyIds"));
+        int branchID = body.get("branchID") instanceof Number n ? n.intValue() : 0;
+        storyService.batchChangeBranch(storyIds, branchID);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 

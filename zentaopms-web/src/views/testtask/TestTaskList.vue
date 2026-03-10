@@ -1,12 +1,12 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>测试单列表</h1>
+      <h1>{{ testtaskLang.list }}</h1>
     </div>
     <div class="filter mb-2">
-      <label>项目</label>
+      <label>{{ projectLang.common }}</label>
       <select v-model.number="projectId" @change="load">
-        <option :value="0">请选择项目</option>
+        <option :value="0">{{ projectLang.selectProject }}</option>
         <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select>
     </div>
@@ -15,9 +15,9 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>名称</th>
-            <th>状态</th>
-            <th>操作</th>
+            <th>{{ commonLang.name }}</th>
+            <th>{{ commonLang.status }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -25,12 +25,12 @@
             <td>{{ t.id }}</td>
             <td>{{ t.name }}</td>
             <td>{{ t.status }}</td>
-            <td><router-link :to="`/testtask/${t.id}`" class="btn">查看</router-link></td>
+            <td><router-link :to="`/testtask/${t.id}`" class="btn">{{ commonLang.view }}</router-link></td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
@@ -38,6 +38,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { getTestTaskList } from '@/api/testtask'
 import { getProjectAll } from '@/api/project'
+import { common as commonLang, project as projectLang, testtask as testtaskLang } from '@/lang/zh-cn'
 
 const list = ref([])
 const loading = ref(true)

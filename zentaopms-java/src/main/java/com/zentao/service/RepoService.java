@@ -22,6 +22,12 @@ public class RepoService {
         return repoRepository.findByDeletedOrderByIdAsc(0);
     }
 
+    public List<Repo> getByScm(String scm) {
+        return scm == null || scm.isBlank()
+                ? getAll()
+                : repoRepository.findByDeletedAndScmOrderByIdAsc(0, scm);
+    }
+
     public Repo create(Repo repo) {
         repo.setDeleted(0);
         return repoRepository.save(repo);

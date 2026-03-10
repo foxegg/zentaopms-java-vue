@@ -24,23 +24,31 @@ public class FileController {
 
     private final FileService fileService;
 
+    /** 与 PHP file getList 一致：按 objectType+objectID 查附件；objectID≤0 时返回空列表 */
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
-            @RequestParam String objectType,
-            @RequestParam int objectID) {
+            @RequestParam(required = false) String objectType,
+            @RequestParam(required = false, defaultValue = "0") int objectID) {
+        if (objectID <= 0 || objectType == null || objectType.isBlank()) {
+            return ResponseEntity.ok(Map.of("result", "success", "data", List.<File>of()));
+        }
         List<File> files = fileService.getByObject(objectType, objectID);
         return ResponseEntity.ok(Map.of("result", "success", "data", files));
     }
 
+    /** 与 PHP 一致；id≤0 时返回 404 */
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return fileService.getById(id)
                 .map(f -> ResponseEntity.ok(Map.of("result", "success", "data", f)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /** 与 PHP 一致；id≤0 时返回 404 */
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> download(@PathVariable int id) throws java.io.IOException {
+        if (id <= 0) return ResponseEntity.notFound().build();
         var fileOpt = fileService.getById(id);
         if (fileOpt.isEmpty()) return ResponseEntity.notFound().build();
         File f = fileOpt.get();
@@ -54,8 +62,10 @@ public class FileController {
                 .body(r);
     }
 
+    /** 与 PHP 一致；id≤0 时返回 404 */
     @GetMapping("/{id}/preview")
     public ResponseEntity<Resource> preview(@PathVariable int id) throws java.io.IOException {
+        if (id <= 0) return ResponseEntity.notFound().build();
         var fileOpt = fileService.getById(id);
         if (fileOpt.isEmpty()) return ResponseEntity.notFound().build();
         File f = fileOpt.get();
@@ -99,6 +109,8 @@ public class FileController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (fileService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         fileService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

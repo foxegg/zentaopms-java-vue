@@ -1,20 +1,20 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>统计详情</h1>
-      <router-link to="/metric" class="btn">返回列表</router-link>
+      <h1>{{ metricLang.viewDetail }}</h1>
+      <router-link to="/metric" class="btn">{{ commonLang.backList }}</router-link>
     </div>
     <div v-if="metric" class="table-wrap">
       <table class="data-table">
         <tr><th>ID</th><td>{{ metric.id }}</td></tr>
-        <tr><th>名称</th><td>{{ metric.name }}</td></tr>
+        <tr><th>{{ commonLang.name }}</th><td>{{ metric.name }}</td></tr>
         <tr v-for="(v, k) in metric" :key="k" v-show="!['id','name'].includes(k)">
           <th>{{ k }}</th><td>{{ v }}</td>
         </tr>
       </table>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else>统计项不存在</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else>{{ commonLang.notFound }}</p>
   </div>
 </template>
 
@@ -22,6 +22,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMetricById } from '@/api/metric'
+import { common as commonLang, metric as metricLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const metric = ref(null)

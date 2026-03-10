@@ -9,4 +9,6 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project, Integer>, JpaSpecificationExecutor<Project> {
 
     List<Project> findByDeletedOrderByIdDesc(int deleted);
+
+    List<Project> findByProjectAndTypeInAndDeleted(Integer project, List<String> type, int deleted);
 }

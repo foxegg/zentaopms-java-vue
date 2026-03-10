@@ -1,20 +1,20 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">产品详情</h1>
-      <router-link to="/product" class="btn">返回列表</router-link>
+      <h1 style="margin:0;">{{ productLang.view }}</h1>
+      <router-link to="/product" class="btn">{{ commonLang.backList }}</router-link>
     </div>
     <div v-if="product" class="table-wrap">
       <table class="data-table">
         <tr><th>ID</th><td>{{ product.id }}</td></tr>
-        <tr><th>名称</th><td>{{ product.name }}</td></tr>
-        <tr><th>代号</th><td>{{ product.code }}</td></tr>
-        <tr><th>状态</th><td>{{ product.status }}</td></tr>
-        <tr><th>类型</th><td>{{ product.type }}</td></tr>
+        <tr><th>{{ productLang.name }}</th><td>{{ product.name }}</td></tr>
+        <tr><th>{{ productLang.code }}</th><td>{{ product.code }}</td></tr>
+        <tr><th>{{ productLang.status }}</th><td>{{ product.status }}</td></tr>
+        <tr><th>{{ productLang.type }}</th><td>{{ product.type }}</td></tr>
       </table>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else>产品不存在</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else>{{ commonLang.notFound }}</p>
   </div>
 </template>
 
@@ -22,6 +22,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getProductById } from '@/api/product'
+import { product as productLang, common as commonLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const product = ref(null)

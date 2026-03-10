@@ -27,6 +27,7 @@ public class MetricController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return metricService.getById(id)
                 .map(m -> ResponseEntity.ok(Map.of("result", "success", "data", m)))
                 .orElse(ResponseEntity.notFound().build());
@@ -40,6 +41,7 @@ public class MetricController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Metric metric) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         metric.setId(id);
         metricService.update(metric);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -47,6 +49,7 @@ public class MetricController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         metricService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

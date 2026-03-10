@@ -1,17 +1,18 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">产品列表</h1>
+      <h1 style="margin:0;">{{ productLang.browse }}</h1>
+      <router-link to="/product/create" class="btn btn-primary">{{ productLang.create }}</router-link>
     </div>
     <div class="table-wrap" v-if="!loading">
       <table class="data-table">
         <thead>
           <tr>
             <th>ID</th>
-            <th>名称</th>
-            <th>代号</th>
-            <th>状态</th>
-            <th>操作</th>
+            <th>{{ productLang.name }}</th>
+            <th>{{ productLang.code }}</th>
+            <th>{{ productLang.status }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -21,20 +22,21 @@
             <td>{{ p.code }}</td>
             <td>{{ p.status || '-' }}</td>
             <td>
-              <router-link :to="`/product/${p.id}`" class="btn">查看</router-link>
-              <router-link :to="`/product/edit/${p.id}`" class="btn">编辑</router-link>
+              <router-link :to="`/product/${p.id}`" class="btn">{{ commonLang.view }}</router-link>
+              <router-link :to="`/product/edit/${p.id}`" class="btn">{{ commonLang.edit }}</router-link>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getProductList } from '@/api/product'
+import { product as productLang, common as commonLang } from '@/lang/zh-cn'
 
 const list = ref([])
 const loading = ref(true)

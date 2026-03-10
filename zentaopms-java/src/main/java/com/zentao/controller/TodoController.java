@@ -20,13 +20,15 @@ public class TodoController {
     private final TodoService todoService;
 
     @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> list() {
-        List<Todo> todos = todoService.getMyTodos();
+    public ResponseEntity<Map<String, Object>> list(
+            @RequestParam(required = false, defaultValue = "all") String status) {
+        List<Todo> todos = todoService.getMyTodos("all".equals(status) ? null : status);
         return ResponseEntity.ok(Map.of("result", "success", "data", todos));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return todoService.getById(id)
                 .map(t -> ResponseEntity.ok(Map.of("result", "success", "data", t)))
                 .orElse(ResponseEntity.notFound().build());
@@ -40,6 +42,8 @@ public class TodoController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Todo todo) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (todoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         todo.setId(id);
         todoService.update(todo);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -47,38 +51,57 @@ public class TodoController {
 
     @PutMapping("/{id}/start")
     public ResponseEntity<Map<String, Object>> start(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (todoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Todo t = todoService.start(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", t));
     }
 
     @PutMapping("/{id}/activate")
     public ResponseEntity<Map<String, Object>> activate(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (todoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Todo t = todoService.activate(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", t));
     }
 
     @PutMapping("/{id}/close")
     public ResponseEntity<Map<String, Object>> close(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (todoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Todo t = todoService.close(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", t));
     }
 
     @PutMapping("/{id}/assignTo")
     public ResponseEntity<Map<String, Object>> assignTo(@PathVariable int id, @RequestBody Map<String, String> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (todoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Todo t = todoService.assignTo(id, body.getOrDefault("assignedTo", ""));
         return ResponseEntity.ok(Map.of("result", "success", "data", t));
     }
 
     @PutMapping("/{id}/finish")
     public ResponseEntity<Map<String, Object>> finish(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (todoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Todo t = todoService.finish(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", t));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (todoService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         todoService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
+    }
+
+    /** 批量添加待办，与 PHP todo batchCreate 一致 */
+    @PostMapping("/batchCreate")
+    public ResponseEntity<Map<String, Object>> batchCreate(@RequestBody List<Todo> todos) {
+        List<Integer> ids = todoService.batchCreate(todos != null ? todos : List.of());
+        return ResponseEntity.ok(Map.of("result", "success", "data", ids));
     }
 
     @PostMapping("/batchFinish")
@@ -92,6 +115,16 @@ public class TodoController {
     public ResponseEntity<Map<String, Object>> batchClose(@RequestBody Map<String, Object> body) {
         List<Integer> ids = toIntList(body.get("todoIds"));
         todoService.batchClose(ids);
+        return ResponseEntity.ok(Map.of("result", "success"));
+    }
+
+    /** 批量编辑待办，与 PHP todo batchEdit 一致 */
+    @PostMapping("/batchEdit")
+    public ResponseEntity<Map<String, Object>> batchEdit(@RequestBody Map<String, Object> body) {
+        List<Integer> todoIds = toIntList(body.get("todoIds"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> fields = (Map<String, Object>) body.get("fields");
+        todoService.batchEdit(todoIds, fields != null ? fields : Map.of());
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 

@@ -1,10 +1,11 @@
 <template>
   <div class="page-header">
-    <h1>首页</h1>
-    <p>欢迎使用禅道项目管理系统。从左侧导航进入用户、项目等模块。</p>
-    <p><router-link to="/user">用户列表</router-link></p>
+    <h1>{{ myLang.index }}</h1>
+    <p>{{ appLang.welcome }}</p>
+    <p><router-link to="/user">{{ userLang.browse }}</router-link></p>
   </div>
 </template>
 
 <script setup>
+import { app as appLang, my as myLang, user as userLang } from '@/lang/zh-cn'
 </script>

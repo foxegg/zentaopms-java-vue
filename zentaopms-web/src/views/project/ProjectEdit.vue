@@ -1,46 +1,47 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>编辑项目</h1>
-      <router-link :to="`/project/${id}`" class="btn">返回详情</router-link>
+      <h1>{{ projectLang.edit }}</h1>
+      <router-link :to="`/project/${id}`" class="btn">{{ commonLang.backDetail }}</router-link>
     </div>
     <div class="table-wrap" v-if="form">
+      <p v-if="errorMsg" class="text-danger">{{ errorMsg }}</p>
       <form @submit.prevent="onSubmit">
         <div class="form-group">
-          <label>名称 *</label>
+          <label>{{ projectLang.name }} *</label>
           <input v-model="form.name" required maxlength="90" />
         </div>
         <div class="form-group">
-          <label>代号</label>
+          <label>{{ projectLang.code }}</label>
           <input v-model="form.code" maxlength="45" />
         </div>
         <div class="form-group">
-          <label>类型</label>
+          <label>{{ projectLang.type }}</label>
           <select v-model="form.type">
-            <option value="sprint">冲刺</option>
-            <option value="kanban">看板</option>
-            <option value="stage">阶段</option>
+            <option value="sprint">{{ projectLang.typeList.sprint }}</option>
+            <option value="kanban">{{ projectLang.typeList.kanban }}</option>
+            <option value="stage">{{ projectLang.typeList.stage }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>开始日期</label>
+          <label>{{ projectLang.begin }}</label>
           <input v-model="form.begin" type="date" />
         </div>
         <div class="form-group">
-          <label>结束日期</label>
+          <label>{{ projectLang.end }}</label>
           <input v-model="form.end" type="date" />
         </div>
         <div class="form-group">
-          <label>描述</label>
+          <label>{{ projectLang.desc }}</label>
           <textarea v-model="form.description" rows="3"></textarea>
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting">保存</button>
-          <router-link :to="`/project/${id}`" class="btn">取消</router-link>
+          <button type="submit" class="btn btn-primary" :disabled="submitting">{{ commonLang.save }}</button>
+          <router-link :to="`/project/${id}`" class="btn">{{ commonLang.cancel }}</router-link>
         </div>
       </form>
     </div>
-    <p v-else-if="loading">加载中...</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
   </div>
 </template>
 
@@ -48,6 +49,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProjectById, updateProject } from '@/api/project'
+import { project as projectLang, common as commonLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const router = useRouter()
@@ -78,12 +80,27 @@ onMounted(async () => {
 
 async function onSubmit() {
   if (!form.value) return
+  if (form.value.begin && form.value.end && form.value.begin > form.value.end) {
+    errorMsg.value = commonLang.dateRangeError
+    return
+  }
+  errorMsg.value = ''
   submitting.value = true
   try {
-    await updateProject(id.value, form.value)
+    const res = await updateProject(id.value, form.value)
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
     router.push(`/project/${id.value}`)
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style scoped>
+.text-danger { color: #c00; margin-bottom: 0.5rem; }
+</style>

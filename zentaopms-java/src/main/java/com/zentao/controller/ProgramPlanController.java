@@ -39,6 +39,7 @@ public class ProgramPlanController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         var project = projectService.getById(id);
         if (project.isPresent()) {
             return ResponseEntity.ok(Map.of("result", "success", "data", project.get()));

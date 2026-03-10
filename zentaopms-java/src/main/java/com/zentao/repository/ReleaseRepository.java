@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface ReleaseRepository extends JpaRepository<Release, Integer> {
 
+    List<Release> findByDeletedOrderByDateDesc(int deleted);
+
     List<Release> findByProductAndDeleted(int productId, int deleted);
 
     List<Release> findByProductAndDeletedOrderByDateDesc(int productId, int deleted);

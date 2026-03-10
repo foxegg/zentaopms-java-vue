@@ -2,11 +2,15 @@ package com.zentao.controller;
 
 import com.zentao.entity.Project;
 import com.zentao.service.ActionService;
+import com.zentao.service.BugService;
+import com.zentao.service.BuildService;
 import com.zentao.service.ExportService;
 import com.zentao.service.ExecutionService;
 import com.zentao.service.ProjectService;
 import com.zentao.service.ProjectProductService;
 import com.zentao.service.TeamService;
+import com.zentao.service.TestSuiteService;
+import com.zentao.service.TestTaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -29,12 +33,19 @@ public class ProjectController {
     private final ExportService exportService;
     private final TeamService teamService;
     private final ProjectProductService projectProductService;
+    private final BugService bugService;
+    private final BuildService buildService;
+    private final TestTaskService testTaskService;
+    private final TestSuiteService testSuiteService;
 
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
+            @RequestParam(required = false, defaultValue = "all") String status,
+            @RequestParam(required = false, defaultValue = "all") String type,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
-        var page = projectService.getList(null, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
+        org.springframework.data.jpa.domain.Specification<Project> spec = projectService.buildListSpec(status, type);
+        var page = projectService.getList(spec, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
         return ResponseEntity.ok(Map.of(
                 "result", "success",
                 "data", page.getContent(),
@@ -52,8 +63,31 @@ public class ProjectController {
         return ResponseEntity.ok(Map.of("result", "success", "data", projects));
     }
 
+    @GetMapping("/pairs")
+    public ResponseEntity<Map<String, Object>> pairs(
+            @RequestParam(required = false, defaultValue = "all") String mode,
+            @RequestParam(required = false, defaultValue = "0") Integer programID) {
+        Map<Integer, String> pairs = projectService.getPairs(mode, programID != null && programID > 0 ? programID : null);
+        return ResponseEntity.ok(Map.of("result", "success", "data", pairs));
+    }
+
+    @GetMapping("/pairsByList")
+    public ResponseEntity<Map<String, Object>> pairsByList(@RequestParam(required = false) String ids) {
+        List<Integer> idList = ids != null && !ids.isBlank()
+                ? java.util.Arrays.stream(ids.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(s -> { try { return Integer.parseInt(s); } catch (NumberFormatException e) { return null; } })
+                        .filter(i -> i != null && i > 0)
+                        .distinct()
+                        .toList()
+                : List.of();
+        return ResponseEntity.ok(Map.of("result", "success", "data", projectService.getPairsByList(idList)));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return projectService.getById(id)
                 .map(p -> ResponseEntity.ok(Map.of("result", "success", "data", p)))
                 .orElse(ResponseEntity.notFound().build());
@@ -67,6 +101,8 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Project project) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         project.setId(id);
         projectService.update(project);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -74,30 +110,40 @@ public class ProjectController {
 
     @PutMapping("/{id}/start")
     public ResponseEntity<Map<String, Object>> start(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Project p = projectService.start(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", p));
     }
 
     @PutMapping("/{id}/suspend")
     public ResponseEntity<Map<String, Object>> suspend(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Project p = projectService.suspend(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", p));
     }
 
     @PutMapping("/{id}/close")
     public ResponseEntity<Map<String, Object>> close(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Project p = projectService.close(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", p));
     }
 
     @PutMapping("/{id}/activate")
     public ResponseEntity<Map<String, Object>> activate(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Project p = projectService.activate(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", p));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         projectService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
@@ -111,28 +157,52 @@ public class ProjectController {
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
+    /** 与 PHP 一致；id≤0 时返回空 data + pager（与 execution dynamic 形状一致） */
     @GetMapping("/{id}/dynamic")
     public ResponseEntity<Map<String, Object>> dynamic(
             @PathVariable int id,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
+        if (id <= 0) return ResponseEntity.ok(Map.of(
+                "result", "success",
+                "data", List.of(),
+                "pager", Map.of("recTotal", 0L, "recPerPage", recPerPage, "pageID", pageID)));
         var actions = actionService.getByProject(id, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
         return ResponseEntity.ok(Map.of("result", "success", "data", actions));
     }
 
     @GetMapping("/{id}/executions")
     public ResponseEntity<Map<String, Object>> executions(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.of()));
         return ResponseEntity.ok(Map.of("result", "success", "data", executionService.getByProject(id)));
+    }
+
+    /** 与 PHP project 子列表一致：聚合 execution/bug/build/testtask/testsuite，供看板/概览使用；id≤0 返回 404 */
+    @GetMapping("/{id}/summary")
+    public ResponseEntity<Map<String, Object>> summary(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
+        Map<String, Object> data = Map.of(
+                "executions", executionService.getByProject(id),
+                "bugs", bugService.getByProject(id),
+                "builds", buildService.getByProject(id),
+                "testTasks", testTaskService.getByProject(id),
+                "testSuites", testSuiteService.getByProject(id)
+        );
+        return ResponseEntity.ok(Map.of("result", "success", "data", data));
     }
 
     @GetMapping("/{id}/team")
     public ResponseEntity<Map<String, Object>> team(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.of()));
         var list = teamService.getByProject(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", list));
     }
 
     @PostMapping("/{id}/manageMembers")
     public ResponseEntity<Map<String, Object>> manageMembers(@PathVariable int id, @RequestBody Map<String, Object> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> members = body.get("members") instanceof List<?> list
                 ? list.stream()
@@ -146,12 +216,15 @@ public class ProjectController {
 
     @GetMapping("/{id}/products")
     public ResponseEntity<Map<String, Object>> products(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.of()));
         var list = projectProductService.getProductsByProject(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", list));
     }
 
     @PostMapping("/{id}/manageProducts")
     public ResponseEntity<Map<String, Object>> manageProducts(@PathVariable int id, @RequestBody Map<String, Object> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         projectProductService.manageProductsFromBody(id, body);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

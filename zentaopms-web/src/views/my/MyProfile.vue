@@ -1,25 +1,26 @@
 <template>
   <div>
-    <div class="page-header"><h1>我的档案</h1></div>
+    <div class="page-header"><h1>{{ myLang.profile }}</h1></div>
     <div class="table-wrap profile-wrap" v-if="!loading && profile">
       <table class="data-table">
         <tbody>
-          <tr><th width="120">账号</th><td>{{ profile.account }}</td></tr>
-          <tr><th>姓名</th><td>{{ profile.realname }}</td></tr>
-          <tr><th>部门</th><td>{{ profile.dept }}</td></tr>
-          <tr><th>邮箱</th><td>{{ profile.email }}</td></tr>
-          <tr><th>角色</th><td>{{ profile.role }}</td></tr>
+          <tr><th width="120">{{ userLang.account }}</th><td>{{ profile.account }}</td></tr>
+          <tr><th>{{ userLang.realname }}</th><td>{{ profile.realname }}</td></tr>
+          <tr><th>{{ userLang.dept }}</th><td>{{ profile.dept }}</td></tr>
+          <tr><th>{{ userLang.email }}</th><td>{{ profile.email }}</td></tr>
+          <tr><th>{{ userLang.role }}</th><td>{{ profile.role }}</td></tr>
         </tbody>
       </table>
-      <p><router-link to="/my/preference" class="btn">偏好设置</router-link></p>
+      <p><router-link to="/my/preference" class="btn">{{ myLang.preference }}</router-link></p>
     </div>
-    <p v-else-if="loading">加载中...</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getMyProfile } from '@/api/my'
+import { my as myLang, user as userLang, common as commonLang } from '@/lang/zh-cn'
 
 const profile = ref(null)
 const loading = ref(true)

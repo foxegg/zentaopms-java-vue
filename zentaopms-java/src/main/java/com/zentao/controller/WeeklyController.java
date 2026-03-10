@@ -19,14 +19,16 @@ public class WeeklyController {
 
     private final WeeklyReportService weeklyReportService;
 
+    /** 与 PHP 一致；projectID≤0 时返回空列表 */
     @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> list(@RequestParam int projectID) {
-        List<WeeklyReport> list = weeklyReportService.getByProject(projectID);
+    public ResponseEntity<Map<String, Object>> list(@RequestParam(required = false, defaultValue = "0") int projectID) {
+        List<WeeklyReport> list = projectID <= 0 ? List.of() : weeklyReportService.getByProject(projectID);
         return ResponseEntity.ok(Map.of("result", "success", "data", list));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return weeklyReportService.getById(id)
                 .map(r -> ResponseEntity.ok(Map.of("result", "success", "data", r)))
                 .orElse(ResponseEntity.notFound().build());
@@ -40,6 +42,7 @@ public class WeeklyController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody WeeklyReport report) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         report.setId(id);
         weeklyReportService.update(report);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -47,6 +50,7 @@ public class WeeklyController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         weeklyReportService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

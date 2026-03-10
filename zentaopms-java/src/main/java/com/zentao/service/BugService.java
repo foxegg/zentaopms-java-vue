@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,22 +40,55 @@ public class BugService {
         return bugRepository.findByAssignedToAndDeleted(account, 0);
     }
 
+    /** 缺陷 id→title 下拉用，与 PHP bug getProductBugPairs(productID) 一致；product 为 0 时返回空 */
+    public Map<Integer, String> getPairs(int productId) {
+        if (productId <= 0) return Map.of();
+        List<Bug> list = getByProduct(productId);
+        return list.stream().collect(Collectors.toMap(Bug::getId, b -> b.getTitle() != null ? b.getTitle() : "", (a, b) -> a));
+    }
+
+    /** 按缺陷 ID 列表返回 id→title，空列表返回空 Map；便于关联缺陷展示名称 */
+    public Map<Integer, String> getPairsByList(List<Integer> bugIdList) {
+        if (bugIdList == null || bugIdList.isEmpty()) return Map.of();
+        List<Bug> list = bugRepository.findAllById(bugIdList);
+        return list.stream()
+                .filter(b -> b.getDeleted() == 0)
+                .collect(Collectors.toMap(Bug::getId, b -> b.getTitle() != null ? b.getTitle() : "", (a, b) -> a));
+    }
+
     public Page<Bug> getList(Specification<Bug> spec, Pageable pageable) {
         return bugRepository.findAll(
                 Specification.where(spec).and((root, q, cb) -> cb.equal(root.get("deleted"), 0)),
                 pageable);
     }
 
+    /** 与 PHP 一致：创建时设置 openedBy、openedDate（当前用户与时间） */
     public Bug create(Bug bug) {
         bug.setDeleted(0);
         bug.setStatus("active");
+        bug.setOpenedBy(getCurrentAccount());
+        bug.setOpenedDate(LocalDateTime.now());
         Bug saved = bugRepository.save(bug);
         actionService.create("bug", saved.getId(), "Opened");
         return saved;
     }
 
+    /** 与 PHP 一致：仅更新可编辑字段，并设置 lastEditedBy、lastEditedDate，避免请求体未传字段覆盖 openedBy 等 */
+    @Transactional
     public Bug update(Bug bug) {
-        return bugRepository.save(bug);
+        Bug existing = getById(bug.getId()).orElseThrow(() -> new RuntimeException("Bug不存在"));
+        if (bug.getProduct() != null) existing.setProduct(bug.getProduct());
+        if (bug.getProject() != null) existing.setProject(bug.getProject());
+        if (bug.getOpenedBuild() != null) existing.setOpenedBuild(bug.getOpenedBuild());
+        if (bug.getTitle() != null) existing.setTitle(bug.getTitle());
+        if (bug.getSeverity() != null) existing.setSeverity(bug.getSeverity());
+        if (bug.getPri() != null) existing.setPri(bug.getPri());
+        if (bug.getSteps() != null) existing.setSteps(bug.getSteps());
+        existing.setLastEditedBy(getCurrentAccount());
+        existing.setLastEditedDate(LocalDateTime.now());
+        Bug saved = bugRepository.save(existing);
+        actionService.create("bug", existing.getId(), "Edited");
+        return saved;
     }
 
     @Transactional
@@ -121,9 +156,16 @@ public class BugService {
         actionService.create("bug", bugId, "deleted");
     }
 
+    /** 与 PHP bug batchAssignTo 一致：跳过已关闭缺陷、跳过指派未变更 */
     @Transactional
     public void batchAssignTo(List<Integer> bugIds, String assignedTo) {
+        if (bugIds == null) return;
+        String to = assignedTo != null ? assignedTo : "";
         for (Integer id : bugIds) {
+            Bug bug = getById(id).orElse(null);
+            if (bug == null) continue;
+            if ("closed".equals(bug.getStatus())) continue;
+            if (to.equals(bug.getAssignedTo() != null ? bug.getAssignedTo() : "")) continue;
             assignTo(id, assignedTo);
         }
     }
@@ -135,21 +177,29 @@ public class BugService {
         }
     }
 
+    /** 与 PHP bug batchClose 一致：跳过已关闭缺陷 */
     @Transactional
     public void batchClose(List<Integer> bugIds) {
+        if (bugIds == null) return;
         for (Integer id : bugIds) {
+            Bug bug = getById(id).orElse(null);
+            if (bug == null) continue;
+            if ("closed".equals(bug.getStatus())) continue;
             close(id, null);
         }
     }
 
+    /** 与 PHP bug batchChangeModule 一致：跳过模块未变更，并记录 Edited */
     @Transactional
     public void batchChangeModule(List<Integer> bugIds, int moduleId) {
+        if (bugIds == null) return;
         for (Integer id : bugIds) {
             Bug b = getById(id).orElse(null);
-            if (b != null) {
-                b.setModule(moduleId);
-                bugRepository.save(b);
-            }
+            if (b == null) continue;
+            if (moduleId == b.getModule()) continue;
+            b.setModule(moduleId);
+            bugRepository.save(b);
+            actionService.create("bug", id, "Edited");
         }
     }
 

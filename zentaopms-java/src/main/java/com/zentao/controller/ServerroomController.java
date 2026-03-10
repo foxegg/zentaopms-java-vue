@@ -23,6 +23,7 @@ public class ServerroomController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return service.getById(id)
                 .map(d -> ResponseEntity.ok(Map.of("result", "success", "data", d)))
                 .orElse(ResponseEntity.notFound().build());
@@ -36,6 +37,8 @@ public class ServerroomController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Serverroom d) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (service.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         d.setId(id);
         service.update(d);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -43,6 +46,8 @@ public class ServerroomController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (service.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         service.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

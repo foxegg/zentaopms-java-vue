@@ -20,12 +20,14 @@ public class ScoreController {
             @RequestParam(required = false) String account,
             @RequestParam(defaultValue = "1") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
-        List<Score> list = service.getList(account, pageID, recPerPage);
-        return ResponseEntity.ok(Map.of("result", "success", "data", list));
+        var page = service.getList(account, pageID, recPerPage);
+        return ResponseEntity.ok(Map.of("result", "success", "data", page.getContent(), "pager",
+                Map.of("recTotal", page.getTotalElements(), "recPerPage", recPerPage, "pageID", pageID)));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable long id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return service.getById(id)
                 .map(d -> ResponseEntity.ok(Map.of("result", "success", "data", d)))
                 .orElse(ResponseEntity.notFound().build());

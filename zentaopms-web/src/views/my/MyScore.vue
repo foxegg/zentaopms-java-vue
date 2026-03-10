@@ -1,10 +1,10 @@
 <template>
   <div>
-    <div class="page-header"><h1>我的积分</h1></div>
+    <div class="page-header"><h1>{{ myLang.score }}</h1></div>
     <div class="table-wrap" v-if="!loading">
       <table class="data-table" v-if="list.length">
         <thead>
-          <tr><th>时间</th><th>类型</th><th>积分</th><th>说明</th></tr>
+          <tr><th>{{ scoreLang.time }}</th><th>{{ scoreLang.type }}</th><th>{{ scoreLang.score }}</th><th>{{ scoreLang.desc }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="s in list" :key="s.id || s.date">
@@ -15,21 +15,22 @@
           </tr>
         </tbody>
       </table>
-      <p v-else>暂无积分记录</p>
+      <p v-else>{{ scoreLang.noRecord }}</p>
       <div class="pager mt-2" v-if="pager && pager.recTotal > 0">
-        <span>共 {{ pager.recTotal }} 条</span>
-        <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">上一页</button>
-        <span>第 {{ pageID }} 页</span>
-        <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">下一页</button>
+        <span>{{ commonLang.totalCount.replace('{total}', pager.recTotal) }}</span>
+        <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">{{ commonLang.prevPage }}</button>
+        <span>{{ commonLang.pageNum.replace('{n}', pageID) }}</span>
+        <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">{{ commonLang.nextPage }}</button>
       </div>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getMyScore } from '@/api/my'
+import { my as myLang, common as commonLang, score as scoreLang } from '@/lang/zh-cn'
 
 const list = ref([])
 const pager = ref(null)

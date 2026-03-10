@@ -51,6 +51,11 @@ public class ActionService {
         return actionRepository.findByObjectTypeAndObjectIDOrderByDateDesc(objectType, objectId);
     }
 
+    /** 分页查询操作记录，与 list 一致；用于返回 pager */
+    public Page<Action> getListPage(String objectType, int objectId, Pageable pageable) {
+        return actionRepository.findByObjectTypeAndObjectIDOrderByDateDesc(objectType, objectId, pageable);
+    }
+
     public List<Action> getByActor(String actor, Pageable pageable) {
         return actionRepository.findByActorOrderByDateDesc(actor, pageable);
     }

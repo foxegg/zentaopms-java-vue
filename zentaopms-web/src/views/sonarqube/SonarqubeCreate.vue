@@ -1,12 +1,13 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>新建 SonarQube</h1>
-      <router-link to="/sonarqube" class="btn">返回列表</router-link>
+      <h1>SonarQube</h1>
+      <router-link to="/sonarqube" class="btn">{{ commonLang.backList }}</router-link>
     </div>
+    <p v-if="errorMsg" class="text-danger">{{ errorMsg }}</p>
     <form @submit.prevent="onSubmit" class="form-wrap">
       <div class="form-group">
-        <label>名称 *</label>
+        <label>{{ commonLang.name }} *</label>
         <input v-model="form.name" required />
       </div>
       <div class="form-group">
@@ -14,12 +15,12 @@
         <input v-model="form.url" required />
       </div>
       <div class="form-group">
-        <label>账号</label>
+        <label>{{ commonLang.account }}</label>
         <input v-model="form.account" />
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary" :disabled="submitting">保存</button>
-        <router-link to="/sonarqube" class="btn">取消</router-link>
+        <button type="submit" class="btn btn-primary" :disabled="submitting">{{ commonLang.save }}</button>
+        <router-link to="/sonarqube" class="btn">{{ commonLang.cancel }}</router-link>
       </div>
     </form>
   </div>
@@ -29,18 +30,31 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createSonarqube } from '@/api/sonarqube'
+import { common as commonLang } from '@/lang/zh-cn'
 
 const router = useRouter()
 const form = ref({ name: '', url: '', account: '' })
 const submitting = ref(false)
+const errorMsg = ref('')
 
 async function onSubmit() {
+  errorMsg.value = ''
   submitting.value = true
   try {
-    await createSonarqube(form.value)
+    const res = await createSonarqube(form.value)
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
     router.push('/sonarqube')
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style scoped>
+.text-danger { color: #c00; margin-bottom: 0.5rem; }
+</style>

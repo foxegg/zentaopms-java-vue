@@ -19,14 +19,16 @@ public class ProjectBuildController {
 
     private final BuildService buildService;
 
+    /** 与 PHP 一致；projectID≤0 时返回空列表 */
     @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> list(@RequestParam int projectID) {
-        List<Build> list = buildService.getByProject(projectID);
+    public ResponseEntity<Map<String, Object>> list(@RequestParam(required = false, defaultValue = "0") int projectID) {
+        List<Build> list = projectID <= 0 ? List.of() : buildService.getByProject(projectID);
         return ResponseEntity.ok(Map.of("result", "success", "data", list));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return buildService.getById(id)
                 .map(b -> ResponseEntity.ok(Map.of("result", "success", "data", b)))
                 .orElse(ResponseEntity.notFound().build());
@@ -40,6 +42,8 @@ public class ProjectBuildController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Build build) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (buildService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         build.setId(id);
         buildService.update(build);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -47,6 +51,8 @@ public class ProjectBuildController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (buildService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         buildService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

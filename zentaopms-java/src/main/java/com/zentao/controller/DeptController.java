@@ -42,6 +42,7 @@ public class DeptController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return deptRepository.findById(id)
                 .map(d -> ResponseEntity.ok(Map.of("result", "success", "data", d)))
                 .orElse(ResponseEntity.notFound().build());
@@ -57,14 +58,23 @@ public class DeptController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Dept dept) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         dept.setId(id);
         deptRepository.save(dept);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
+    /** 与 PHP dept delete 一致：有子部门或部门下有人时禁止删除 */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (!deptRepository.findByParentOrderByOrderNumAsc(id).isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "This Department has child departments. You cannot delete it!"));
+        }
+        if (!userRepository.findByDeptAndDeleted(id, 0).isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "This Department has users. You cannot delete it!"));
+        }
         deptRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
@@ -87,8 +97,10 @@ public class DeptController {
         return ResponseEntity.ok(Map.of("result", "success"));
     }
 
+    /** 与 PHP 一致；id≤0 时返回 data: [] */
     @GetMapping("/{id}/users")
     public ResponseEntity<Map<String, Object>> users(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.of()));
         List<User> users = userRepository.findByDeptAndDeleted(id, 0);
         return ResponseEntity.ok(Map.of("result", "success", "data", users));
     }

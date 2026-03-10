@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">关联产品 · {{ project?.name || '' }}</h1>
-      <router-link v-if="project" :to="`/project/${project.id}`" class="btn">返回项目</router-link>
+      <h1 style="margin:0;">{{ projectLang.products }} · {{ project?.name || '' }}</h1>
+      <router-link v-if="project" :to="`/project/${project.id}`" class="btn">{{ projectLang.backProject }}</router-link>
     </div>
     <div v-if="project && !loading" class="table-wrap">
       <form @submit.prevent="onSubmit">
-        <h3>选择要关联的产品</h3>
-        <p class="mb-2">已选 {{ selectedIds.length }} 个产品</p>
+        <h3>{{ projectLang.selectProducts }}</h3>
+        <p class="mb-2">{{ projectLang.selectedCount.replace('{n}', selectedIds.length) }}</p>
         <div class="product-checkboxes">
           <label v-for="p in allProducts" :key="p.id" class="checkbox-row">
             <input type="checkbox" :value="p.id" v-model="selectedIds" />
@@ -15,13 +15,13 @@
           </label>
         </div>
         <div class="form-actions mt-2">
-          <button type="submit" class="btn btn-primary" :disabled="saving">保存</button>
+          <button type="submit" class="btn btn-primary" :disabled="saving">{{ commonLang.save }}</button>
         </div>
       </form>
-      <h3 class="mt-2">当前已关联</h3>
+      <h3 class="mt-2">{{ projectLang.linkedProducts }}</h3>
       <table class="data-table" v-if="products.length">
         <thead>
-          <tr><th>产品</th><th>代号</th></tr>
+          <tr><th>{{ productLang.common }}</th><th>{{ productLang.code }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="pp in products" :key="pp.id">
@@ -30,9 +30,9 @@
           </tr>
         </tbody>
       </table>
-      <p v-else>暂无关联产品</p>
+      <p v-else>{{ commonLang.noData }}</p>
     </div>
-    <p v-else-if="loading">加载中...</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
   </div>
 </template>
 
@@ -41,6 +41,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getProjectById, getProjectProducts, manageProjectProducts } from '@/api/project'
 import { getProductList } from '@/api/product'
+import { common as commonLang, project as projectLang, product as productLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const projectId = computed(() => Number(route.params.id))

@@ -3,9 +3,9 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>时间</th>
-          <th>对象</th>
-          <th>动作</th>
+          <th>{{ userLang.dynamicTime }}</th>
+          <th>{{ userLang.dynamicObject }}</th>
+          <th>{{ userLang.dynamicAction }}</th>
         </tr>
       </thead>
       <tbody>
@@ -16,14 +16,15 @@
         </tr>
       </tbody>
     </table>
-    <p class="muted">共 {{ list.length }} 条动态</p>
+    <p class="muted">{{ userLang.totalDynamic.replace('{n}', list.length) }}</p>
   </div>
-  <p v-else>加载中...</p>
+  <p v-else>{{ commonLang.loading }}</p>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { getUserDynamic } from '@/api/user'
+import { common as commonLang, user as userLang } from '@/lang/zh-cn'
 
 const props = defineProps({ user: Object })
 const list = ref([])

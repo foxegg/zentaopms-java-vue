@@ -4,9 +4,12 @@ import com.zentao.entity.Product;
 import com.zentao.repository.ProductRepository;
 import com.zentao.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,20 +37,75 @@ public class ProductService {
                     .filter(p -> programId == p.getProgram())
                     .toList();
         }
-        return products.stream().collect(Collectors.toMap(Product::getId, Product::getName));
+        return products.stream().collect(Collectors.toMap(Product::getId, p -> p.getName() != null ? p.getName() : "", (a, b) -> a));
+    }
+
+    /** 按产品 ID 列表返回 id→name，与 project/story 等 pairsByList 约定一致；空列表返回空 Map */
+    public Map<Integer, String> getPairsByList(List<Integer> productIdList) {
+        if (productIdList == null || productIdList.isEmpty()) return Map.of();
+        List<Product> list = productRepository.findAllById(productIdList);
+        return list.stream()
+                .filter(p -> p.getDeleted() == 0)
+                .collect(Collectors.toMap(Product::getId, p -> p.getName() != null ? p.getName() : "", (a, b) -> a));
     }
 
     public List<Product> getList() {
-        var principal = getCurrentUser();
-        if (principal != null && principal.isAdmin()) {
-            return productRepository.findByDeletedOrderByOrderNumAsc(0);
-        }
-        return productRepository.findByDeletedOrderByOrderNumAsc(0);
+        return getList(null);
     }
 
+    /** 产品列表，mode=noclosed 时排除已关闭，与 PHP product browse 一致 */
+    public List<Product> getList(String mode) {
+        return getList(mode, null, 0, 0);
+    }
+
+    /**
+     * 产品列表，支持 status 筛选与分页；与 PHP product list 参数一致（branch 预留）。
+     * recPerPage<=0 时返回全部（不分页）；recPerPage>0 时返回分页结果。
+     */
+    public List<Product> getList(String mode, String status, int pageID, int recPerPage) {
+        List<Product> list;
+        if (status != null && !status.isBlank()) {
+            list = productRepository.findByDeletedAndStatusOrderByOrderNumAsc(0, status);
+        } else if ("noclosed".equals(mode)) {
+            list = productRepository.findByDeletedAndStatusNot(0, "closed");
+        } else {
+            list = productRepository.findByDeletedOrderByOrderNumAsc(0);
+        }
+        if (recPerPage > 0 && pageID > 0) {
+            int from = (pageID - 1) * recPerPage;
+            if (from >= list.size()) return List.of();
+            int to = Math.min(from + recPerPage, list.size());
+            return list.subList(from, to);
+        }
+        return list;
+    }
+
+    /** 分页产品列表，返回 Page 用于统一 pager 结构 */
+    public Page<Product> getListPage(String mode, String status, int pageID, int recPerPage) {
+        int size = recPerPage > 0 ? Math.min(recPerPage, 100) : 20;
+        int page = pageID > 0 ? pageID - 1 : 0;
+        PageRequest pr = PageRequest.of(page, size);
+        if (status != null && !status.isBlank()) {
+            return productRepository.findByDeletedAndStatusOrderByOrderNumAsc(0, status, pr);
+        }
+        if ("noclosed".equals(mode)) {
+            return productRepository.findByDeletedAndStatusNot(0, "closed", pr);
+        }
+        return productRepository.findByDeletedOrderByOrderNumAsc(0, pr);
+    }
+
+    /** 与 PHP 一致：创建产品时设置 createdBy、createdDate（当前用户与时间） */
     public Product create(Product product) {
         product.setDeleted(0);
+        product.setCreatedBy(getCurrentAccount());
+        product.setCreatedDate(LocalDateTime.now());
         return productRepository.save(product);
+    }
+
+    private static String getCurrentAccount() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal up) return up.getUsername();
+        return "";
     }
 
     public Product update(Product product) {

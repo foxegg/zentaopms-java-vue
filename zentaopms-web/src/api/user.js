@@ -1,5 +1,6 @@
 import client from './client'
 
+/** 与 PHP/Java 一致：params 支持 account、dept、pageID、recPerPage；返回 data、pager */
 export function getUserList(params = {}) {
   return client.get('/api/user/list', { params }).then((r) => r.data)
 }

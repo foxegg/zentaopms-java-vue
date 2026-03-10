@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">产品计划</h1>
-      <router-link v-if="productId" :to="`/productplan/create?product=${productId}`" class="btn btn-primary">新建计划</router-link>
+      <h1 style="margin:0;">{{ productplanLang.common }}</h1>
+      <router-link v-if="productId" :to="`/productplan/create?product=${productId}`" class="btn btn-primary">{{ productplanLang.create }}</router-link>
     </div>
     <div class="filter mb-2">
-      <label>产品</label>
+      <label>{{ productLang.common }}</label>
       <select v-model.number="productId" @change="load">
-        <option :value="0">请选择产品</option>
+        <option :value="0">{{ productLang.select }}</option>
         <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select>
     </div>
@@ -16,10 +16,10 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>名称</th>
-            <th>状态</th>
-            <th>开始/结束</th>
-            <th>操作</th>
+            <th>{{ commonLang.name }}</th>
+            <th>{{ commonLang.status }}</th>
+            <th>{{ executionLang.begin }}/{{ executionLang.end }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -29,16 +29,16 @@
             <td>{{ p.status }}</td>
             <td>{{ p.begin || '-' }} / {{ p.end || '-' }}</td>
             <td>
-              <router-link :to="`/productplan/${p.id}`" class="btn">查看</router-link>
-              <router-link :to="`/productplan/edit/${p.id}`" class="btn">编辑</router-link>
+              <router-link :to="`/productplan/${p.id}`" class="btn">{{ commonLang.view }}</router-link>
+              <router-link :to="`/productplan/edit/${p.id}`" class="btn">{{ commonLang.edit }}</router-link>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-if="list.length === 0">暂无计划</p>
+      <p v-if="list.length === 0">{{ productplanLang.emptyTip }}</p>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else-if="!productId">请选择产品</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else-if="!productId">{{ productLang.select }}</p>
   </div>
 </template>
 
@@ -47,6 +47,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getProductPlanList } from '@/api/productplan'
 import { getProductList } from '@/api/product'
+import { common as commonLang, product as productLang, productplan as productplanLang, execution as executionLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const list = ref([])

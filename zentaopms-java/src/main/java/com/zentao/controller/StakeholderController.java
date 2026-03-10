@@ -19,16 +19,19 @@ public class StakeholderController {
 
     private final StakeholderService stakeholderService;
 
+    /** 与 PHP 一致；objectID≤0 时返回 data: [] */
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
-            @RequestParam int objectID,
+            @RequestParam(required = false, defaultValue = "0") int objectID,
             @RequestParam(defaultValue = "project") String objectType) {
+        if (objectID <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.<Stakeholder>of()));
         List<Stakeholder> list = stakeholderService.getByObject(objectID, objectType);
         return ResponseEntity.ok(Map.of("result", "success", "data", list));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return stakeholderService.getById(id)
                 .map(s -> ResponseEntity.ok(Map.of("result", "success", "data", s)))
                 .orElse(ResponseEntity.notFound().build());
@@ -42,6 +45,8 @@ public class StakeholderController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Stakeholder stakeholder) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (stakeholderService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         stakeholder.setId(id);
         stakeholderService.update(stakeholder);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -49,6 +54,8 @@ public class StakeholderController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (stakeholderService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         stakeholderService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

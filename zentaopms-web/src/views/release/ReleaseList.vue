@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">发布列表</h1>
-      <router-link to="/release/create" class="btn btn-primary">新建版本</router-link>
+      <h1 style="margin:0;">{{ releaseLang.browse }}</h1>
+      <router-link to="/release/create" class="btn btn-primary">{{ releaseLang.create }}</router-link>
     </div>
     <div class="filter mb-2">
-      <label>产品</label>
+      <label>{{ releaseLang.product }}</label>
       <select v-model.number="productId" @change="load">
-        <option :value="0">请选择产品</option>
+        <option :value="0">{{ releaseLang.selectProduct }}</option>
         <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select>
     </div>
@@ -15,10 +15,10 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>名称</th>
-            <th>日期</th>
-            <th>操作</th>
+            <th>{{ releaseLang.id }}</th>
+            <th>{{ releaseLang.name }}</th>
+            <th>{{ releaseLang.date }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -27,14 +27,14 @@
             <td>{{ r.name }}</td>
             <td>{{ r.date }}</td>
             <td>
-            <router-link :to="`/release/${r.id}`" class="btn">查看</router-link>
-            <router-link :to="`/release/edit/${r.id}`" class="btn">编辑</router-link>
-          </td>
+              <router-link :to="`/release/${r.id}`" class="btn">{{ commonLang.view }}</router-link>
+              <router-link :to="`/release/edit/${r.id}`" class="btn">{{ commonLang.edit }}</router-link>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
@@ -42,6 +42,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { getReleaseList } from '@/api/release'
 import { getProductList } from '@/api/product'
+import { release as releaseLang, common as commonLang } from '@/lang/zh-cn'
 
 const list = ref([])
 const loading = ref(true)

@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,11 +42,27 @@ public class UserController {
     private final TestCaseService testCaseService;
     private final ExecutionService executionService;
 
+    /** 与 PHP user list 一致：分页；可选 account、dept 筛选 */
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
-            @RequestParam(defaultValue = "0") int pageID,
+            @RequestParam(required = false) String account,
+            @RequestParam(required = false, defaultValue = "0") int dept,
+            @RequestParam(defaultValue = "1") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
-        var page = userService.getList(null, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
+        Specification<User> spec = null;
+        if ((account != null && !account.isBlank()) || dept > 0) {
+            spec = (root, q, cb) -> {
+                java.util.List<jakarta.persistence.criteria.Predicate> preds = new java.util.ArrayList<>();
+                if (account != null && !account.isBlank()) {
+                    preds.add(cb.like(root.get("account"), "%" + account.replace("%", "\\%") + "%"));
+                }
+                if (dept > 0) {
+                    preds.add(cb.equal(root.get("dept"), dept));
+                }
+                return preds.isEmpty() ? null : cb.and(preds.toArray(new jakarta.persistence.criteria.Predicate[0]));
+            };
+        }
+        var page = userService.getList(spec, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
         return ResponseEntity.ok(Map.of(
                 "result", "success",
                 "data", page.getContent(),
@@ -64,8 +81,10 @@ public class UserController {
         return ResponseEntity.ok(Map.of("result", "success", "data", pairs));
     }
 
+    /** 与 PHP 一致；id≤0 时返回 404 */
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return userService.getById(id)
                 .map(user -> ResponseEntity.ok(Map.of("result", "success", "data", user)))
                 .orElse(ResponseEntity.notFound().build());
@@ -90,6 +109,7 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> todo(@PathVariable int id,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         String account = userService.getById(id).map(User::getAccount).orElse(null);
         if (account == null || account.isEmpty()) return ResponseEntity.notFound().build();
         org.springframework.data.jpa.domain.Specification<Task> taskSpec = (root, q, cb) -> cb.equal(root.get("assignedTo"), account);
@@ -118,6 +138,7 @@ public class UserController {
             @RequestParam(defaultValue = "id_desc") String orderBy,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         String account = userService.getById(id).map(User::getAccount).orElse(null);
         if (account == null || account.isEmpty()) return ResponseEntity.notFound().build();
         String field = "assignedTo";
@@ -141,6 +162,7 @@ public class UserController {
             @RequestParam(defaultValue = "id_desc") String orderBy,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         String account = userService.getById(id).map(User::getAccount).orElse(null);
         if (account == null || account.isEmpty()) return ResponseEntity.notFound().build();
         String field = "assignedTo";
@@ -165,6 +187,7 @@ public class UserController {
             @RequestParam(defaultValue = "id_desc") String orderBy,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         String account = userService.getById(id).map(User::getAccount).orElse(null);
         if (account == null || account.isEmpty()) return ResponseEntity.notFound().build();
         String field = "assignedTo";
@@ -187,6 +210,7 @@ public class UserController {
 
     @GetMapping("/{id}/profile")
     public ResponseEntity<Map<String, Object>> profile(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return userService.getById(id)
                 .map(user -> ResponseEntity.ok(Map.of("result", "success", "data", user)))
                 .orElse(ResponseEntity.notFound().build());
@@ -196,6 +220,7 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> testtaskList(@PathVariable int id,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         String account = userService.getById(id).map(User::getAccount).orElse(null);
         if (account == null || account.isEmpty()) return ResponseEntity.notFound().build();
         var page = testTaskService.getByOwner(account, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
@@ -211,6 +236,7 @@ public class UserController {
             @RequestParam(defaultValue = "case2Him") String type,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         String account = userService.getById(id).map(User::getAccount).orElse(null);
         if (account == null || account.isEmpty()) return ResponseEntity.notFound().build();
         PageRequest pageRequest = PageRequest.of(Math.max(0, pageID - 1), recPerPage);
@@ -235,6 +261,7 @@ public class UserController {
             @RequestParam(defaultValue = "all") String status,
             @RequestParam(defaultValue = "0") int pageID,
             @RequestParam(defaultValue = "20") int recPerPage) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         String account = userService.getById(id).map(User::getAccount).orElse(null);
         if (account == null || account.isEmpty()) return ResponseEntity.notFound().build();
         var page = executionService.getByAccount(account, status, PageRequest.of(Math.max(0, pageID - 1), recPerPage));
@@ -255,6 +282,8 @@ public class UserController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody User user) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (userService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         user.setId(id);
         userService.update(user);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -263,6 +292,8 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (userService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         userService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
@@ -287,6 +318,8 @@ public class UserController {
     @PutMapping("/{id}/unlock")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> unlock(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (userService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         userService.unlock(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }
@@ -294,6 +327,8 @@ public class UserController {
     @PutMapping("/{id}/resetPassword")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> resetPassword(@PathVariable int id, @RequestBody Map<String, String> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (userService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         String newPassword = body != null ? body.get("password") : null;
         userService.resetPassword(id, newPassword);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -302,6 +337,8 @@ public class UserController {
     @PutMapping("/{id}/unbind")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> unbind(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (userService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         userService.unbind(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

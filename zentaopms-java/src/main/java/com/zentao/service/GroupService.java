@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 权限组服务 - 对应 module/group
@@ -24,6 +25,31 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final UserGroupRepository userGroupRepository;
     private final GroupPrivRepository groupPrivRepository;
+
+    /** 与 PHP group getPairs(projectID) 一致：按 project 过滤，projectID=0 表示 project 字段为 0 的全局组 */
+    public Map<Integer, String> getPairs(int projectId) {
+        return getPairs(projectId, null);
+    }
+
+    /** 与 PHP group getPairs 一致：vision 非空时按 project+vision 过滤（多版本场景） */
+    public Map<Integer, String> getPairs(int projectId, String vision) {
+        List<Group> list = (vision != null && !vision.isEmpty())
+                ? groupRepository.findByProjectAndVision(projectId, vision)
+                : groupRepository.findByProject(projectId);
+        return list.stream().collect(Collectors.toMap(Group::getId, g -> g.getName() != null ? g.getName() : "", (a, b) -> a));
+    }
+
+    /** 与 PHP group getList(projectID) 一致：按 project 过滤的组列表 */
+    public List<Group> getList(int projectId) {
+        return getList(projectId, null);
+    }
+
+    /** 与 PHP group getList 一致：vision 非空时按 project+vision 过滤 */
+    public List<Group> getList(int projectId, String vision) {
+        return (vision != null && !vision.isEmpty())
+                ? groupRepository.findByProjectAndVision(projectId, vision)
+                : groupRepository.findByProject(projectId);
+    }
 
     public List<UserGroup> getMembers(int groupId) {
         return userGroupRepository.findByGroupId(groupId);

@@ -11,9 +11,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Predicate;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +36,82 @@ public class ProjectService {
                 pageable);
     }
 
+    /** 构建项目列表筛选条件，与 PHP project getList(status, orderBy) 一致；仅项目/项目集（排除执行 type），status: all/undone/wait/doing/done/closed */
+    public Specification<Project> buildListSpec(String status, String type) {
+        return (root, query, cb) -> {
+            List<Predicate> preds = new ArrayList<>();
+            if (type != null && !type.isEmpty() && !"all".equalsIgnoreCase(type)) {
+                preds.add(cb.equal(root.get("type"), type));
+            } else {
+                preds.add(root.get("type").in("project", "program"));
+            }
+            if (status != null && !status.isEmpty() && !"all".equalsIgnoreCase(status)) {
+                if ("undone".equalsIgnoreCase(status)) {
+                    preds.add(cb.not(root.get("status").in("done", "closed")));
+                } else if ("done".equalsIgnoreCase(status)) {
+                    preds.add(root.get("status").in("done", "closed"));
+                } else {
+                    preds.add(cb.equal(root.get("status"), status));
+                }
+            }
+            return cb.and(preds.toArray(new Predicate[0]));
+        };
+    }
+
     public List<Project> getAll() {
         return projectRepository.findByDeletedOrderByIdDesc(0);
     }
 
+    /** 项目/项目集 id->name 下拉用，与 PHP project getPairsByProgram 一致；mode=all 全部，noclosed 排除 closed；programID>0 仅该项目集下 */
+    public Map<Integer, String> getPairs(String mode, Integer programID) {
+        Specification<Project> spec = (root, query, cb) -> {
+            List<Predicate> preds = new ArrayList<>();
+            preds.add(cb.equal(root.get("deleted"), 0));
+            preds.add(root.get("type").in("project", "program"));
+            if (mode != null && "noclosed".equalsIgnoreCase(mode)) {
+                preds.add(cb.not(root.get("status").in("done", "closed")));
+            }
+            if (programID != null && programID > 0) {
+                preds.add(cb.equal(root.get("project"), programID));
+            }
+            return cb.and(preds.toArray(new Predicate[0]));
+        };
+        List<Project> list = projectRepository.findAll(spec);
+        return list.stream().collect(Collectors.toMap(Project::getId, p -> p.getName() != null ? p.getName() : "", (a, b) -> a));
+    }
+
+    /** 按项目 ID 列表返回 id→name（仅 type=project/program），与 PHP project getPairsByIdList(projectIdList) 一致；空列表返回空 Map */
+    public Map<Integer, String> getPairsByList(List<Integer> projectIdList) {
+        if (projectIdList == null || projectIdList.isEmpty()) return Map.of();
+        List<Project> list = projectRepository.findAllById(projectIdList);
+        return list.stream()
+                .filter(p -> p.getDeleted() == 0 && (p.getType() != null && ("project".equals(p.getType()) || "program".equals(p.getType()))))
+                .collect(Collectors.toMap(Project::getId, p -> p.getName() != null ? p.getName() : "", (a, b) -> a));
+    }
+
+    /** 项目集 id→name 下拉用，与 PHP program getPairs 一致；仅 type=program、deleted=0 */
+    public Map<Integer, String> getProgramPairs() {
+        Specification<Project> spec = (root, query, cb) -> cb.and(
+                cb.equal(root.get("deleted"), 0),
+                cb.equal(root.get("type"), "program"));
+        List<Project> list = projectRepository.findAll(spec);
+        return list.stream().collect(Collectors.toMap(Project::getId, p -> p.getName() != null ? p.getName() : "", (a, b) -> a));
+    }
+
+    /** 按项目集 ID 列表返回 id→name，与 PHP program getPairsByList(programIDList) 一致；空列表返回空 Map */
+    public Map<Integer, String> getProgramPairsByList(List<Integer> programIdList) {
+        if (programIdList == null || programIdList.isEmpty()) return Map.of();
+        List<Project> list = projectRepository.findAllById(programIdList);
+        return list.stream()
+                .filter(p -> p.getDeleted() == 0 && "program".equals(p.getType()))
+                .collect(Collectors.toMap(Project::getId, p -> p.getName() != null ? p.getName() : "", (a, b) -> a));
+    }
+
+    /** 与 PHP 一致：创建项目时设置 openedBy、openedDate（当前用户与时间） */
     public Project create(Project project) {
         project.setDeleted(0);
+        project.setOpenedBy(getCurrentAccount());
+        project.setOpenedDate(LocalDateTime.now());
         return projectRepository.save(project);
     }
 

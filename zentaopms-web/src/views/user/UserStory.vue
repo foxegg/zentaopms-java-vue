@@ -1,32 +1,32 @@
 <template>
   <div class="table-wrap" v-if="!loading">
     <div class="form-group" style="display:flex;gap:12px;flex-wrap:wrap;">
-      <label>类型</label>
+      <label>{{ userLang.type }}</label>
       <select v-model="type" @change="load(1)" style="width:auto;">
-        <option value="assignedTo">指派给我</option>
-        <option value="openedBy">由我创建</option>
-        <option value="closedBy">由我关闭</option>
-        <option value="reviewedBy">由我评审</option>
+        <option value="assignedTo">{{ userLang.assignedTo }}</option>
+        <option value="openedBy">{{ userLang.openedBy }}</option>
+        <option value="closedBy">{{ userLang.closedBy }}</option>
+        <option value="reviewedBy">{{ userLang.reviewedBy }}</option>
       </select>
-      <label>需求类型</label>
+      <label>{{ userLang.storyType }}</label>
       <select v-model="storyType" @change="load(1)" style="width:auto;">
-        <option value="story">需求</option>
-        <option value="requirement">用户需求</option>
-        <option value="epic">史诗</option>
+        <option value="story">{{ userLang.storyTypeStory }}</option>
+        <option value="requirement">{{ userLang.storyTypeRequirement }}</option>
+        <option value="epic">{{ userLang.storyTypeEpic }}</option>
       </select>
-      <label>排序</label>
+      <label>{{ userLang.sort }}</label>
       <select v-model="orderBy" @change="load(1)" style="width:auto;">
-        <option value="id_desc">ID 降序</option>
-        <option value="id_asc">ID 升序</option>
+        <option value="id_desc">{{ userLang.idDesc }}</option>
+        <option value="id_asc">{{ userLang.idAsc }}</option>
       </select>
     </div>
     <table class="data-table">
       <thead>
         <tr>
           <th>ID</th>
-          <th>标题</th>
-          <th>状态</th>
-          <th>优先级</th>
+          <th>{{ storyLang.title }}</th>
+          <th>{{ storyLang.status }}</th>
+          <th>{{ storyLang.pri }}</th>
         </tr>
       </thead>
       <tbody>
@@ -39,17 +39,18 @@
       </tbody>
     </table>
     <div class="pager" v-if="pager">
-      <span>共 {{ pager.recTotal }} 条</span>
-      <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">上一页</button>
-      <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">下一页</button>
+      <span>{{ commonLang.totalCount.replace('{total}', pager.recTotal) }}</span>
+      <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">{{ commonLang.prevPage }}</button>
+      <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">{{ commonLang.nextPage }}</button>
     </div>
   </div>
-  <p v-else>加载中...</p>
+  <p v-else>{{ commonLang.loading }}</p>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { getUserStory } from '@/api/user'
+import { common as commonLang, story as storyLang, user as userLang } from '@/lang/zh-cn'
 
 const props = defineProps({ user: Object })
 const list = ref([])

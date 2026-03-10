@@ -37,14 +37,17 @@ public class EpicController {
         ));
     }
 
+    /** 与 PHP 一致；productId≤0 时返回 data: [] */
     @GetMapping("/product/{productId}")
     public ResponseEntity<Map<String, Object>> byProduct(@PathVariable int productId) {
+        if (productId <= 0) return ResponseEntity.ok(Map.of("result", "success", "data", List.<Story>of()));
         List<Story> list = storyService.getByProductAndType(productId, "epic");
         return ResponseEntity.ok(Map.of("result", "success", "data", list));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return storyService.getById(id)
                 .filter(s -> "epic".equals(s.getType()))
                 .map(s -> ResponseEntity.ok(Map.of("result", "success", "data", s)))
@@ -60,6 +63,8 @@ public class EpicController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Story story) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         story.setId(id);
         story.setType("epic");
         storyService.update(story);
@@ -68,18 +73,24 @@ public class EpicController {
 
     @PutMapping("/{id}/close")
     public ResponseEntity<Map<String, Object>> close(@PathVariable int id, @RequestBody Map<String, String> body) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Story story = storyService.close(id, body != null ? body.get("closedReason") : null);
         return ResponseEntity.ok(Map.of("result", "success", "data", story));
     }
 
     @PutMapping("/{id}/activate")
     public ResponseEntity<Map<String, Object>> activate(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         Story story = storyService.activate(id);
         return ResponseEntity.ok(Map.of("result", "success", "data", story));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (storyService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         storyService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

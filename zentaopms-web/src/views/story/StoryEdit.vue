@@ -1,32 +1,33 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>编辑需求</h1>
-      <router-link :to="`/story/${id}`" class="btn">返回详情</router-link>
+      <h1>{{ storyLang.editStory }}</h1>
+      <router-link :to="`/story/${id}`" class="btn">{{ commonLang.backDetail }}</router-link>
     </div>
     <div class="table-wrap" v-if="form">
+      <p v-if="errorMsg" class="text-danger">{{ errorMsg }}</p>
       <form @submit.prevent="onSubmit">
         <div class="form-group">
-          <label>标题 *</label>
+          <label>{{ storyLang.title }} *</label>
           <input v-model="form.title" required />
         </div>
         <div class="form-group">
-          <label>优先级</label>
+          <label>{{ storyLang.pri }}</label>
           <select v-model.number="form.pri">
             <option v-for="n in 4" :key="n" :value="n">{{ n }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>描述</label>
+          <label>{{ storyLang.spec }}</label>
           <textarea v-model="form.description" rows="4"></textarea>
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting">保存</button>
-          <router-link :to="`/story/${id}`" class="btn">取消</router-link>
+          <button type="submit" class="btn btn-primary" :disabled="submitting">{{ commonLang.save }}</button>
+          <router-link :to="`/story/${id}`" class="btn">{{ commonLang.cancel }}</router-link>
         </div>
       </form>
     </div>
-    <p v-else-if="loading">加载中...</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
   </div>
 </template>
 
@@ -34,6 +35,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getStoryById, updateStory } from '@/api/story'
+import { story as storyLang, common as commonLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const router = useRouter()
@@ -41,6 +43,7 @@ const id = computed(() => Number(route.params.id))
 const form = ref(null)
 const loading = ref(true)
 const submitting = ref(false)
+const errorMsg = ref('')
 
 onMounted(async () => {
   try {
@@ -60,16 +63,27 @@ onMounted(async () => {
 
 async function onSubmit() {
   if (!form.value) return
+  errorMsg.value = ''
   submitting.value = true
   try {
-    await updateStory(id.value, {
+    const res = await updateStory(id.value, {
       title: form.value.title,
       pri: form.value.pri,
       description: form.value.description
     })
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
     router.push(`/story/${id.value}`)
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style scoped>
+.text-danger { color: #c00; margin-bottom: 0.5rem; }
+</style>

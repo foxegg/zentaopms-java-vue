@@ -17,4 +17,9 @@ public interface StoryRepository extends JpaRepository<Story, Integer>, JpaSpeci
     List<Story> findByAssignedToAndDeleted(String account, int deleted);
 
     List<Story> findByProductAndTypeAndDeleted(int productId, String type, int deleted);
+
+    List<Story> findByIdIn(List<Integer> ids);
+
+    /** 模块删除时将被删模块下的需求归到父模块，与 PHP tree remove 一致 */
+    List<Story> findByModuleInAndDeleted(java.util.Collection<Integer> moduleIds, int deleted);
 }

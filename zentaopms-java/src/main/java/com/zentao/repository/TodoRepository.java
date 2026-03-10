@@ -10,6 +10,8 @@ public interface TodoRepository extends JpaRepository<Todo, Integer> {
 
     List<Todo> findByAccountAndDeletedOrderByDateDesc(String account, int deleted);
 
+    List<Todo> findByAccountAndStatusAndDeletedOrderByDateDesc(String account, String status, int deleted);
+
     List<Todo> findByAssignedToAndDeleted(String assignedTo, int deleted);
 
     List<Todo> findByDateAndAccountAndDeleted(LocalDate date, String account, int deleted);

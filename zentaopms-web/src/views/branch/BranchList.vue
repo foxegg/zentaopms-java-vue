@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">分支管理</h1>
-      <router-link v-if="productId" :to="`/branch/create?product=${productId}`" class="btn btn-primary">新建分支</router-link>
+      <h1 style="margin:0;">{{ branchLang.common }}</h1>
+      <router-link v-if="productId" :to="`/branch/create?product=${productId}`" class="btn btn-primary">{{ branchLang.create }}</router-link>
     </div>
     <div class="filter mb-2">
-      <label>产品</label>
+      <label>{{ productLang.common }}</label>
       <select v-model.number="productId" @change="load">
-        <option :value="0">请选择产品</option>
+        <option :value="0">{{ productLang.select }}</option>
         <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select>
     </div>
@@ -16,8 +16,8 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>名称</th>
-            <th>操作</th>
+            <th>{{ commonLang.name }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -25,16 +25,16 @@
             <td>{{ b.id }}</td>
             <td>{{ b.name }}</td>
             <td>
-              <router-link :to="`/branch/${b.id}`" class="btn">查看</router-link>
-              <router-link :to="`/branch/edit/${b.id}`" class="btn">编辑</router-link>
+              <router-link :to="`/branch/${b.id}`" class="btn">{{ commonLang.view }}</router-link>
+              <router-link :to="`/branch/edit/${b.id}`" class="btn">{{ commonLang.edit }}</router-link>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-if="list.length === 0">暂无分支</p>
+      <p v-if="list.length === 0">{{ branchLang.emptyTip }}</p>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else-if="!productId">请选择产品</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else-if="!productId">{{ productLang.select }}</p>
   </div>
 </template>
 
@@ -43,6 +43,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getBranchList } from '@/api/branch'
 import { getProductList } from '@/api/product'
+import { common as commonLang, product as productLang, branch as branchLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const list = ref([])

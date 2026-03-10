@@ -1,30 +1,30 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">项目详情</h1>
-      <router-link to="/project" class="btn">返回列表</router-link>
+      <h1 style="margin:0;">{{ projectLang.view }}</h1>
+      <router-link to="/project" class="btn">{{ commonLang.backList }}</router-link>
     </div>
     <div v-if="project" class="table-wrap">
       <div class="sub-nav mb-2">
-        <router-link :to="`/project/edit/${project.id}`" class="btn">编辑</router-link>
-        <router-link :to="`/project/${project.id}/team`" class="btn">团队</router-link>
-        <router-link :to="`/project/${project.id}/products`" class="btn">关联产品</router-link>
+        <router-link :to="`/project/edit/${project.id}`" class="btn">{{ commonLang.edit }}</router-link>
+        <router-link :to="`/project/${project.id}/team`" class="btn">{{ projectLang.team }}</router-link>
+        <router-link :to="`/project/${project.id}/products`" class="btn">{{ projectLang.products }}</router-link>
       </div>
       <table class="data-table">
-        <tr><th>ID</th><td>{{ project.id }}</td></tr>
-        <tr><th>名称</th><td>{{ project.name }}</td></tr>
-        <tr><th>代号</th><td>{{ project.code }}</td></tr>
-        <tr><th>状态</th><td>{{ project.status }}</td></tr>
+        <tr><th>{{ projectLang.id }}</th><td>{{ project.id }}</td></tr>
+        <tr><th>{{ projectLang.name }}</th><td>{{ project.name }}</td></tr>
+        <tr><th>{{ projectLang.code }}</th><td>{{ project.code }}</td></tr>
+        <tr><th>{{ projectLang.status }}</th><td>{{ project.status }}</td></tr>
       </table>
       <div class="sub-nav mb-2">
-        <router-link :to="`/task?project=${project.id}`" class="btn">任务</router-link>
-        <router-link :to="`/bug?project=${project.id}`" class="btn">Bug</router-link>
-        <router-link :to="`/build?project=${project.id}`" class="btn">构建</router-link>
+        <router-link :to="`/task?project=${project.id}`" class="btn">{{ taskLang.common }}</router-link>
+        <router-link :to="`/bug?project=${project.id}`" class="btn">{{ bugLang.common }}</router-link>
+        <router-link :to="`/build?project=${project.id}`" class="btn">{{ buildLang.common }}</router-link>
       </div>
-      <h3>执行/迭代</h3>
+      <h3>{{ executionLang.list }}</h3>
       <table class="data-table" v-if="executions.length">
         <thead>
-          <tr><th>ID</th><th>名称</th><th>代号</th><th>状态</th></tr>
+          <tr><th>{{ executionLang.id }}</th><th>{{ executionLang.name }}</th><th>{{ executionLang.code }}</th><th>{{ executionLang.status }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="e in executions" :key="e.id">
@@ -35,10 +35,10 @@
           </tr>
         </tbody>
       </table>
-      <p v-else>暂无执行</p>
+      <p v-else>{{ executionLang.noExecution }}</p>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else>项目不存在</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else>{{ commonLang.notFound }}</p>
   </div>
 </template>
 
@@ -47,6 +47,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getProjectById } from '@/api/project'
 import { getExecutionList } from '@/api/execution'
+import { project as projectLang, execution as executionLang, common as commonLang, task as taskLang, bug as bugLang, build as buildLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const project = ref(null)

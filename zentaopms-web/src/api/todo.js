@@ -1,7 +1,8 @@
 import client from './client'
 
-export function getTodoList() {
-  return client.get('/api/todo/list').then((r) => r.data)
+/** 与 PHP/Java 一致：params 支持 status（all/wait/done 等），未传时返回全部 */
+export function getTodoList(params = {}) {
+  return client.get('/api/todo/list', { params }).then((r) => r.data)
 }
 
 export function getTodoById(id) {
@@ -40,10 +41,20 @@ export function deleteTodo(id) {
   return client.delete(`/api/todo/${id}`).then((r) => r.data)
 }
 
+/** 批量添加待办；body: Todo[]，返回 data: id[] */
+export function batchCreateTodo(todos) {
+  return client.post('/api/todo/batchCreate', todos ?? []).then((r) => r.data)
+}
+
 export function batchFinishTodo(todoIds) {
   return client.post('/api/todo/batchFinish', { todoIds }).then((r) => r.data)
 }
 
 export function batchCloseTodo(todoIds) {
   return client.post('/api/todo/batchClose', { todoIds }).then((r) => r.data)
+}
+
+/** 批量编辑待办；body: { todoIds: number[], fields: Record<string, any> } */
+export function batchEditTodo(body) {
+  return client.post('/api/todo/batchEdit', body).then((r) => r.data)
 }

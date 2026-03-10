@@ -33,6 +33,7 @@ public class BlockController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return blockService.getById(id)
                 .map(b -> ResponseEntity.ok(Map.of("result", "success", "data", b)))
                 .orElse(ResponseEntity.notFound().build());
@@ -49,6 +50,8 @@ public class BlockController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Block block) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (blockService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         block.setId(id);
         blockService.update(block);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -56,6 +59,8 @@ public class BlockController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (blockService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         blockService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

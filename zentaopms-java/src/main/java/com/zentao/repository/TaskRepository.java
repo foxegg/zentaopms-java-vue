@@ -19,4 +19,7 @@ public interface TaskRepository extends JpaRepository<Task, Integer>, JpaSpecifi
     List<Task> findByNameContainingAndDeleted(String name, int deleted, org.springframework.data.domain.Pageable pageable);
 
     long countByDeleted(int deleted);
+
+    /** 模块删除时将被删模块下的任务归到父模块，与 PHP tree remove 一致 */
+    List<Task> findByModuleInAndDeleted(java.util.Collection<Integer> moduleIds, int deleted);
 }

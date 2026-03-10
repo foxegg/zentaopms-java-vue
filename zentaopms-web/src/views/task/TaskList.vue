@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">任务列表</h1>
-      <router-link to="/task/create" class="btn btn-primary">新建任务</router-link>
+      <h1 style="margin:0;">{{ taskLang.browse }}</h1>
+      <router-link to="/task/create" class="btn btn-primary">{{ taskLang.create }}</router-link>
     </div>
     <div class="filter mb-2">
-      <label>项目</label>
+      <label>{{ taskLang.project }}</label>
       <select v-model.number="projectId" @change="load">
-        <option :value="0">全部</option>
+        <option :value="0">{{ taskLang.all }}</option>
         <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select>
     </div>
@@ -15,11 +15,11 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>名称</th>
-            <th>状态</th>
-            <th>执行</th>
-            <th>操作</th>
+            <th>{{ taskLang.id }}</th>
+            <th>{{ taskLang.name }}</th>
+            <th>{{ taskLang.status }}</th>
+            <th>{{ taskLang.executionName }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -29,20 +29,20 @@
             <td>{{ t.status }}</td>
             <td>{{ t.executionName || t.execution }}</td>
             <td>
-              <router-link :to="`/task/${t.id}`" class="btn">查看</router-link>
-              <router-link :to="`/task/edit/${t.id}`" class="btn">编辑</router-link>
+              <router-link :to="`/task/${t.id}`" class="btn">{{ commonLang.view }}</router-link>
+              <router-link :to="`/task/edit/${t.id}`" class="btn">{{ commonLang.edit }}</router-link>
             </td>
           </tr>
         </tbody>
       </table>
-      <div class="pager" v-if="pager">
-        <span>共 {{ pager.recTotal }} 条</span>
-        <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">上一页</button>
-        <span>第 {{ pageID }} 页</span>
-        <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">下一页</button>
+      <div class="pager" v-if="pager && pager.recTotal > 0">
+        <span>{{ commonLang.totalCount.replace('{total}', pager.recTotal) }}</span>
+        <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">{{ commonLang.prevPage }}</button>
+        <span>{{ commonLang.pageNum.replace('{n}', pageID) }}</span>
+        <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">{{ commonLang.nextPage }}</button>
       </div>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
@@ -51,6 +51,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getTaskList } from '@/api/task'
 import { getProjectAll } from '@/api/project'
+import { task as taskLang, common as commonLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 

@@ -36,6 +36,7 @@ public class JobController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return jobService.getById(id)
                 .map(j -> ResponseEntity.ok(Map.of("result", "success", "data", j)))
                 .orElse(ResponseEntity.notFound().build());
@@ -49,6 +50,7 @@ public class JobController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Job job) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         job.setId(id);
         jobService.update(job);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -56,6 +58,7 @@ public class JobController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         jobService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

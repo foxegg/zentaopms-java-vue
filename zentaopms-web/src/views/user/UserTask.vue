@@ -1,26 +1,26 @@
 <template>
   <div class="table-wrap" v-if="!loading">
     <div class="form-group" style="display:flex;gap:12px;flex-wrap:wrap;">
-      <label>类型</label>
+      <label>{{ userLang.type }}</label>
       <select v-model="type" @change="load(1)" style="width:auto;">
-        <option value="assignedTo">指派给我</option>
-        <option value="openedBy">由我创建</option>
-        <option value="closedBy">由我关闭</option>
-        <option value="finishedBy">由我完成</option>
+        <option value="assignedTo">{{ userLang.assignedTo }}</option>
+        <option value="openedBy">{{ userLang.openedBy }}</option>
+        <option value="closedBy">{{ userLang.closedBy }}</option>
+        <option value="finishedBy">{{ userLang.finishedBy }}</option>
       </select>
-      <label>排序</label>
+      <label>{{ userLang.sort }}</label>
       <select v-model="orderBy" @change="load(1)" style="width:auto;">
-        <option value="id_desc">ID 降序</option>
-        <option value="id_asc">ID 升序</option>
+        <option value="id_desc">{{ userLang.idDesc }}</option>
+        <option value="id_asc">{{ userLang.idAsc }}</option>
       </select>
     </div>
     <table class="data-table">
       <thead>
         <tr>
           <th>ID</th>
-          <th>名称</th>
-          <th>状态</th>
-          <th>优先级</th>
+          <th>{{ taskLang.name }}</th>
+          <th>{{ taskLang.status }}</th>
+          <th>{{ taskLang.pri }}</th>
         </tr>
       </thead>
       <tbody>
@@ -32,18 +32,19 @@
         </tr>
       </tbody>
     </table>
-    <div class="pager" v-if="pager">
-      <span>共 {{ pager.recTotal }} 条</span>
-      <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">上一页</button>
-      <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">下一页</button>
+    <div class="pager" v-if="pager && pager.recTotal > 0">
+      <span>{{ commonLang.totalCount.replace('{total}', pager.recTotal) }}</span>
+      <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">{{ commonLang.prevPage }}</button>
+      <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">{{ commonLang.nextPage }}</button>
     </div>
   </div>
-  <p v-else>加载中...</p>
+  <p v-else>{{ commonLang.loading }}</p>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { getUserTask } from '@/api/user'
+import { task as taskLang, common as commonLang, user as userLang } from '@/lang/zh-cn'
 
 const props = defineProps({ user: Object })
 const list = ref([])

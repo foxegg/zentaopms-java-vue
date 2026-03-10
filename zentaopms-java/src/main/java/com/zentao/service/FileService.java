@@ -34,8 +34,11 @@ public class FileService {
         return fileRepository.findByObjectTypeAndObjectIDAndDeleted(objectType, objectId, 0);
     }
 
+    /** 与 PHP 一致：创建附件记录时设置 addedBy、addedDate（当前用户与时间） */
     public File create(File file) {
         file.setDeleted(0);
+        file.setAddedBy(getCurrentAccount());
+        file.setAddedDate(LocalDateTime.now());
         return fileRepository.save(file);
     }
 

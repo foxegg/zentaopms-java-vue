@@ -1,19 +1,19 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">项目集详情</h1>
-      <router-link to="/program" class="btn">返回列表</router-link>
-      <router-link v-if="program" :to="`/program/edit/${program.id}`" class="btn">编辑</router-link>
+      <h1 style="margin:0;">{{ programLang.common }}</h1>
+      <router-link to="/program" class="btn">{{ commonLang.backList }}</router-link>
+      <router-link v-if="program" :to="`/program/edit/${program.id}`" class="btn">{{ commonLang.edit }}</router-link>
     </div>
     <div v-if="program" class="table-wrap">
       <table class="data-table">
         <tr><th>ID</th><td>{{ program.id }}</td></tr>
-        <tr><th>名称</th><td>{{ program.name }}</td></tr>
-        <tr><th>状态</th><td>{{ program.status }}</td></tr>
+        <tr><th>{{ commonLang.name }}</th><td>{{ program.name }}</td></tr>
+        <tr><th>{{ commonLang.status }}</th><td>{{ program.status }}</td></tr>
       </table>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else>项目集不存在</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else>{{ programLang.notFound }}</p>
   </div>
 </template>
 
@@ -21,6 +21,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getProgramById } from '@/api/program'
+import { common as commonLang, program as programLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const program = ref(null)

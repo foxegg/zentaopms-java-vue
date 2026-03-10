@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">执行列表</h1>
-      <router-link v-if="projectId" :to="`/execution/create?project=${projectId}`" class="btn btn-primary">新建执行</router-link>
+      <h1 style="margin:0;">{{ executionLang.list }}</h1>
+      <router-link v-if="projectId" :to="`/execution/create?project=${projectId}`" class="btn btn-primary">{{ executionLang.create }}</router-link>
     </div>
     <div class="filter mb-2">
-      <label>项目</label>
+      <label>{{ executionLang.project }}</label>
       <select v-model.number="projectId" @change="load">
-        <option :value="0">请选择项目</option>
+        <option :value="0">{{ executionLang.selectProject }}</option>
         <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select>
     </div>
@@ -15,12 +15,12 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>名称</th>
-            <th>代号</th>
-            <th>状态</th>
-            <th>开始/结束</th>
-            <th>操作</th>
+            <th>{{ executionLang.id }}</th>
+            <th>{{ executionLang.name }}</th>
+            <th>{{ executionLang.code }}</th>
+            <th>{{ executionLang.status }}</th>
+            <th>{{ executionLang.dateRange }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -31,16 +31,16 @@
             <td>{{ e.status }}</td>
             <td>{{ e.begin || '-' }} / {{ e.end || '-' }}</td>
             <td>
-              <router-link :to="`/execution/${e.id}`" class="btn">查看</router-link>
-              <router-link :to="`/execution/edit/${e.id}`" class="btn">编辑</router-link>
+              <router-link :to="`/execution/${e.id}`" class="btn">{{ commonLang.view }}</router-link>
+              <router-link :to="`/execution/edit/${e.id}`" class="btn">{{ commonLang.edit }}</router-link>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-if="list.length === 0">暂无执行</p>
+      <p v-if="list.length === 0">{{ executionLang.noExecution }}</p>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else-if="!projectId">请选择项目</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else-if="!projectId">{{ executionLang.selectProject }}</p>
   </div>
 </template>
 
@@ -49,6 +49,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getExecutionList } from '@/api/execution'
 import { getProjectAll } from '@/api/project'
+import { execution as executionLang, common as commonLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const list = ref([])

@@ -1,11 +1,14 @@
 package com.zentao.service;
 
+import com.zentao.entity.Build;
 import com.zentao.entity.Bug;
 import com.zentao.entity.Product;
 import com.zentao.entity.Project;
 import com.zentao.entity.Release;
 import com.zentao.entity.Story;
 import com.zentao.entity.Task;
+import com.zentao.entity.TestCase;
+import com.zentao.repository.BuildRepository;
 import com.zentao.repository.ProductRepository;
 import com.zentao.repository.ReleaseRepository;
 import com.zentao.service.ProjectService;
@@ -31,9 +34,11 @@ public class ExportService {
     private final BugService bugService;
     private final TaskService taskService;
     private final com.zentao.service.StoryService storyService;
+    private final BuildRepository buildRepository;
     private final ReleaseRepository releaseRepository;
     private final ProductRepository productRepository;
     private final ProjectService projectService;
+    private final TestCaseService testCaseService;
 
     public byte[] exportBugs(Specification<Bug> spec, int maxRows) throws IOException {
         Page<Bug> page = bugService.getList(spec, Pageable.ofSize(Math.min(maxRows, 10000)));
@@ -160,6 +165,84 @@ public class ExportService {
                 sheet.autoSizeColumn(i);
             }
 
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            wb.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    /** 导出测试用例，与 PHP testcase export 一致（按产品导出） */
+    public byte[] exportTestCases(Integer productId, int maxRows) throws IOException {
+        List<TestCase> full = (productId != null && productId > 0)
+                ? testCaseService.getByProduct(productId) : List.of();
+        List<TestCase> list = full.size() <= maxRows ? full : full.subList(0, maxRows);
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("TestCase");
+            CellStyle headerStyle = wb.createCellStyle();
+            Font headerFont = wb.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            String[] headers = {"ID", "产品", "模块", "标题", "类型", "阶段", "优先级", "状态", "前置条件", "创建者", "创建日期"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell c = headerRow.createCell(i);
+                c.setCellValue(headers[i]);
+                c.setCellStyle(headerStyle);
+            }
+            int rowNum = 1;
+            for (TestCase c : list) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(c.getId() != null ? c.getId() : 0);
+                row.createCell(1).setCellValue(c.getProduct() != null ? c.getProduct() : 0);
+                row.createCell(2).setCellValue(c.getModule() != null ? c.getModule() : 0);
+                row.createCell(3).setCellValue(c.getTitle() != null ? c.getTitle() : "");
+                row.createCell(4).setCellValue(c.getType() != null ? c.getType() : "");
+                row.createCell(5).setCellValue(c.getStage() != null ? c.getStage() : "");
+                row.createCell(6).setCellValue(c.getPri() != null ? c.getPri() : 0);
+                row.createCell(7).setCellValue(c.getStatus() != null ? c.getStatus() : "");
+                row.createCell(8).setCellValue(c.getPrecondition() != null ? c.getPrecondition() : "");
+                row.createCell(9).setCellValue(c.getOpenedBy() != null ? c.getOpenedBy() : "");
+                row.createCell(10).setCellValue(c.getOpenedDate() != null ? c.getOpenedDate().toString() : "");
+            }
+            for (int i = 0; i < headers.length; i++) sheet.autoSizeColumn(i);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            wb.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    /** 导出构建版本，按产品；与 PHP build 列表导出一致 */
+    public byte[] exportBuilds(Integer productId, int maxRows) throws IOException {
+        List<Build> full = (productId != null && productId > 0)
+                ? buildRepository.findByProductAndDeleted(productId, 0)
+                : List.of();
+        List<Build> list = full.size() <= maxRows ? full : full.subList(0, maxRows);
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("Build");
+            CellStyle headerStyle = wb.createCellStyle();
+            Font headerFont = wb.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            String[] headers = {"ID", "产品", "项目", "执行", "名称", "日期", "构建者", "创建日期"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell c = headerRow.createCell(i);
+                c.setCellValue(headers[i]);
+                c.setCellStyle(headerStyle);
+            }
+            int rowNum = 1;
+            for (Build b : list) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(b.getId() != null ? b.getId() : 0);
+                row.createCell(1).setCellValue(b.getProduct() != null ? b.getProduct() : 0);
+                row.createCell(2).setCellValue(b.getProject() != null ? b.getProject() : 0);
+                row.createCell(3).setCellValue(b.getExecution() != null ? b.getExecution() : 0);
+                row.createCell(4).setCellValue(b.getName() != null ? b.getName() : "");
+                row.createCell(5).setCellValue(b.getDate() != null ? b.getDate().toString() : "");
+                row.createCell(6).setCellValue(b.getBuilder() != null ? b.getBuilder() : "");
+                row.createCell(7).setCellValue(b.getCreatedDate() != null ? b.getCreatedDate().toString() : "");
+            }
+            for (int i = 0; i < headers.length; i++) sheet.autoSizeColumn(i);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             wb.write(out);
             return out.toByteArray();

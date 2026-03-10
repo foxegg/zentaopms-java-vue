@@ -86,6 +86,7 @@ public class SearchController {
 
     @DeleteMapping("/deleteQuery/{id}")
     public ResponseEntity<Map<String, Object>> deleteQuery(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         userQueryService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

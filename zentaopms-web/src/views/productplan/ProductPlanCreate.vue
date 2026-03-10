@@ -1,33 +1,34 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>新建产品计划</h1>
-      <router-link :to="backUrl" class="btn">返回列表</router-link>
+      <h1>{{ productplanLang.create }}</h1>
+      <router-link :to="backUrl" class="btn">{{ commonLang.backList }}</router-link>
     </div>
     <div class="table-wrap">
+      <p v-if="errorMsg" class="text-danger">{{ errorMsg }}</p>
       <form @submit.prevent="onSubmit">
         <div class="form-group">
-          <label>产品 *</label>
+          <label>{{ productLang.common }} *</label>
           <select v-model.number="form.product" required>
-            <option :value="0">请选择</option>
+            <option :value="0">{{ commonLang.pleaseSelect }}</option>
             <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>名称 *</label>
+          <label>{{ commonLang.name }} *</label>
           <input v-model="form.name" required />
         </div>
         <div class="form-group">
-          <label>开始日期</label>
+          <label>{{ executionLang.begin }}</label>
           <input v-model="form.begin" type="date" />
         </div>
         <div class="form-group">
-          <label>结束日期</label>
+          <label>{{ executionLang.end }}</label>
           <input v-model="form.end" type="date" />
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting">保存</button>
-          <router-link :to="backUrl" class="btn">取消</router-link>
+          <button type="submit" class="btn btn-primary" :disabled="submitting">{{ commonLang.save }}</button>
+          <router-link :to="backUrl" class="btn">{{ commonLang.cancel }}</router-link>
         </div>
       </form>
     </div>
@@ -39,30 +40,45 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { createProductPlan } from '@/api/productplan'
 import { getProductList } from '@/api/product'
+import { common as commonLang, product as productLang, productplan as productplanLang, execution as executionLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const router = useRouter()
 const form = ref({ product: 0, name: '', begin: '', end: '' })
 const products = ref([])
 const submitting = ref(false)
+const errorMsg = ref('')
 
 const backUrl = computed(() => form.value.product ? `/productplan?product=${form.value.product}` : '/productplan')
 
 async function onSubmit() {
   if (!form.value.product) return
+  errorMsg.value = ''
   submitting.value = true
   try {
     const res = await createProductPlan(form.value)
-    router.push(`/productplan/${res.id}`)
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
+    const id = res?.id ?? res?.data?.id
+    if (id) router.push(`/productplan/${id}`)
+    else router.push(backUrl.value)
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
   } finally {
     submitting.value = false
   }
 }
 
 onMounted(async () => {
-  const r = await getProductList()
-  products.value = r.data || []
+  const r = await getProductList({ mode: 'noclosed' })
+  products.value = r?.data ?? []
   const q = route.query.product
   if (q) form.value.product = Number(q) || 0
 })
 </script>
+
+<style scoped>
+.text-danger { color: #c00; margin-bottom: 0.5rem; }
+</style>

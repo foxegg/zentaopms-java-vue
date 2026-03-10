@@ -1,16 +1,17 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">反馈</h1>
+      <h1 style="margin:0;">{{ commonLang.feedback }}</h1>
     </div>
+    <p v-if="errorMsg" class="text-danger mb-2">{{ errorMsg }}</p>
     <div class="table-wrap" v-if="!loading">
       <table class="data-table">
         <thead>
           <tr>
             <th>ID</th>
-            <th>标题</th>
-            <th>状态</th>
-            <th>操作</th>
+            <th>{{ docLang.title }}</th>
+            <th>{{ commonLang.status }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -19,23 +20,25 @@
             <td>{{ f.title || '-' }}</td>
             <td>{{ f.status || '-' }}</td>
             <td>
-              <button type="button" class="btn" @click="onDelete(f.id)">删除</button>
+              <button type="button" class="btn" @click="onDelete(f.id)">{{ commonLang.delete }}</button>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-if="list.length === 0" class="text-muted">暂无数据</p>
+      <p v-if="list.length === 0" class="text-muted">{{ commonLang.noData }}</p>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getFeedbackList, deleteFeedback } from '@/api/feedback'
+import { common as commonLang, doc as docLang } from '@/lang/zh-cn'
 
 const list = ref([])
 const loading = ref(true)
+const errorMsg = ref('')
 
 async function load() {
   loading.value = true
@@ -48,9 +51,18 @@ async function load() {
 }
 
 async function onDelete(id) {
-  if (!confirm('确定删除？')) return
-  await deleteFeedback(id)
-  load()
+  if (!confirm(commonLang.confirmDelete)) return
+  errorMsg.value = ''
+  try {
+    const res = await deleteFeedback(id)
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
+    load()
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
+  }
 }
 
 onMounted(() => load())

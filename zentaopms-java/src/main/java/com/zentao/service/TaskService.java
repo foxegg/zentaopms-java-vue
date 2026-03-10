@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,22 +40,53 @@ public class TaskService {
         return taskRepository.findByAssignedToAndDeleted(account, 0);
     }
 
+    /** 按任务 ID 列表返回 id→name，与 PHP task getPairsByIdList(taskIdList) 一致；空列表返回空 Map */
+    public Map<Integer, String> getPairsByIdList(List<Integer> taskIdList) {
+        if (taskIdList == null || taskIdList.isEmpty()) return Map.of();
+        List<Task> list = taskRepository.findAllById(taskIdList);
+        return list.stream()
+                .filter(t -> t.getDeleted() == 0)
+                .collect(Collectors.toMap(Task::getId, t -> t.getName() != null ? t.getName() : "", (a, b) -> a));
+    }
+
     public Page<Task> getList(Specification<Task> spec, Pageable pageable) {
         return taskRepository.findAll(
                 Specification.where(spec).and((root, q, cb) -> cb.equal(root.get("deleted"), 0)),
                 pageable);
     }
 
+    /** 与 PHP 一致：创建时设置 openedBy、openedDate（当前用户与时间） */
     public Task create(Task task) {
         task.setDeleted(0);
         task.setStatus("wait");
+        task.setOpenedBy(getCurrentAccount());
+        task.setOpenedDate(LocalDateTime.now());
         Task saved = taskRepository.save(task);
         actionService.create("task", saved.getId(), "Opened");
         return saved;
     }
 
+    /** 与 PHP 一致：仅更新可编辑字段，并设置 lastEditedBy、lastEditedDate，避免请求体未传字段覆盖 openedBy 等 */
+    @Transactional
     public Task update(Task task) {
-        return taskRepository.save(task);
+        Task existing = getById(task.getId()).orElseThrow(() -> new RuntimeException("任务不存在"));
+        if (task.getProject() != null) existing.setProject(task.getProject());
+        if (task.getExecution() != null) existing.setExecution(task.getExecution());
+        if (task.getModule() != null) existing.setModule(task.getModule());
+        if (task.getStory() != null) existing.setStory(task.getStory());
+        if (task.getName() != null) existing.setName(task.getName());
+        if (task.getType() != null) existing.setType(task.getType());
+        if (task.getPri() != null) existing.setPri(task.getPri());
+        if (task.getEstimate() != null) existing.setEstimate(task.getEstimate());
+        if (task.getDeadline() != null) existing.setDeadline(task.getDeadline());
+        if (task.getStatus() != null) existing.setStatus(task.getStatus());
+        if (task.getAssignedTo() != null) existing.setAssignedTo(task.getAssignedTo());
+        if (task.getDescription() != null) existing.setDescription(task.getDescription());
+        existing.setLastEditedBy(getCurrentAccount());
+        existing.setLastEditedDate(LocalDateTime.now());
+        Task saved = taskRepository.save(existing);
+        actionService.create("task", existing.getId(), "Edited");
+        return saved;
     }
 
     @Transactional
@@ -157,22 +190,32 @@ public class TaskService {
         }
     }
 
+    /** 与 PHP task batchClose 一致：跳过已关闭任务；若父子同在列表中则只关闭父任务不重复关闭子任务 */
     @Transactional
     public void batchClose(List<Integer> taskIds) {
+        if (taskIds == null) return;
+        java.util.Set<Integer> idSet = new java.util.HashSet<>(taskIds);
         for (Integer id : taskIds) {
+            Task task = getById(id).orElse(null);
+            if (task == null) continue;
+            if ("closed".equals(task.getStatus())) continue;
+            Integer parentId = task.getParent();
+            if (parentId != null && parentId > 0 && idSet.contains(parentId)) continue;
             close(id, null);
         }
     }
 
+    /** 与 PHP task batchChangeModule 一致：跳过模块未变更，并记录 Edited 操作记录 */
     @Transactional
     public void batchChangeModule(List<Integer> taskIds, int moduleId) {
         if (taskIds == null) return;
         for (Integer id : taskIds) {
             Task task = getById(id).orElse(null);
-            if (task != null) {
-                task.setModule(moduleId);
-                taskRepository.save(task);
-            }
+            if (task == null) continue;
+            if (moduleId == task.getModule()) continue;
+            task.setModule(moduleId);
+            taskRepository.save(task);
+            actionService.create("task", id, "Edited");
         }
     }
 

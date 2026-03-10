@@ -1,28 +1,29 @@
 <template>
   <div class="login-page">
     <div class="login-box">
-      <h1>禅道项目管理系统</h1>
+      <h1>{{ appLang.title }}</h1>
       <form @submit.prevent="onSubmit" class="login-form">
         <div class="form-group">
-          <label>用户名</label>
-          <input v-model="account" type="text" required placeholder="请输入用户名" />
+          <label>{{ userLang.account }}</label>
+          <input v-model="account" type="text" required :placeholder="userLang.placeholderAccount" />
         </div>
         <div class="form-group">
-          <label>密码</label>
-          <input v-model="password" type="password" required placeholder="请输入密码" />
+          <label>{{ userLang.password }}</label>
+          <input v-model="password" type="password" required :placeholder="userLang.placeholderPassword" />
         </div>
         <div v-if="error" class="error-msg">{{ error }}</div>
-        <button type="submit" class="btn btn-primary" :disabled="loading">登录</button>
+        <button type="submit" class="btn btn-primary" :disabled="loading">{{ userLang.login }}</button>
       </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { login as apiLogin } from '@/api/auth'
+import { app as appLang, user as userLang } from '@/lang/zh-cn'
 
 const router = useRouter()
 const route = useRoute()
@@ -43,10 +44,10 @@ const onSubmit = async () => {
       const redirect = route.query.redirect || '/'
       router.push(redirect)
     } else {
-      error.value = res?.message || '登录失败'
+      error.value = res?.message || userLang.loginFailed
     }
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || '登录失败'
+    error.value = e.response?.data?.message || e.message || userLang.loginFailed
   } finally {
     loading.value = false
   }

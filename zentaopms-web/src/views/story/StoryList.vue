@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">需求列表</h1>
-      <router-link to="/story/create" class="btn btn-primary">新建需求</router-link>
+      <h1 style="margin:0;">{{ storyLang.browse }}</h1>
+      <router-link to="/story/create" class="btn btn-primary">{{ storyLang.createStory }}</router-link>
     </div>
     <div class="filter mb-2">
-      <label>产品</label>
+      <label>{{ storyLang.product }}</label>
       <select v-model.number="productId" @change="load">
-        <option :value="0">全部</option>
+        <option :value="0">{{ storyLang.all }}</option>
         <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select>
     </div>
@@ -15,11 +15,11 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>标题</th>
-            <th>状态</th>
-            <th>指派</th>
-            <th>操作</th>
+            <th>{{ storyLang.id }}</th>
+            <th>{{ storyLang.title }}</th>
+            <th>{{ storyLang.status }}</th>
+            <th>{{ storyLang.assignTo }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -29,20 +29,20 @@
             <td>{{ s.status }}</td>
             <td>{{ s.assignedTo }}</td>
             <td>
-            <router-link :to="`/story/${s.id}`" class="btn">查看</router-link>
-            <router-link :to="`/story/edit/${s.id}`" class="btn">编辑</router-link>
-          </td>
+              <router-link :to="`/story/${s.id}`" class="btn">{{ commonLang.view }}</router-link>
+              <router-link :to="`/story/edit/${s.id}`" class="btn">{{ commonLang.edit }}</router-link>
+            </td>
           </tr>
         </tbody>
       </table>
-      <div class="pager" v-if="pager">
-        <span>共 {{ pager.recTotal }} 条</span>
-        <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">上一页</button>
-        <span>第 {{ pageID }} 页</span>
-        <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">下一页</button>
+      <div class="pager" v-if="pager && pager.recTotal > 0">
+        <span>{{ commonLang.totalCount.replace('{total}', pager.recTotal) }}</span>
+        <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">{{ commonLang.prevPage }}</button>
+        <span>{{ commonLang.pageNum.replace('{n}', pageID) }}</span>
+        <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">{{ commonLang.nextPage }}</button>
       </div>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
@@ -50,6 +50,7 @@
 import { ref, onMounted } from 'vue'
 import { getStoryList } from '@/api/story'
 import { getProductList } from '@/api/product'
+import { story as storyLang, common as commonLang } from '@/lang/zh-cn'
 
 const list = ref([])
 const pager = ref(null)

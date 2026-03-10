@@ -21,6 +21,25 @@ public class ProgramController {
 
     private final ProjectService projectService;
 
+    @GetMapping("/pairs")
+    public ResponseEntity<Map<String, Object>> pairs() {
+        return ResponseEntity.ok(Map.of("result", "success", "data", projectService.getProgramPairs()));
+    }
+
+    @GetMapping("/pairsByList")
+    public ResponseEntity<Map<String, Object>> pairsByList(@RequestParam(required = false) String ids) {
+        List<Integer> idList = ids != null && !ids.isBlank()
+                ? java.util.Arrays.stream(ids.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(s -> { try { return Integer.parseInt(s); } catch (NumberFormatException e) { return null; } })
+                        .filter(i -> i != null && i > 0)
+                        .distinct()
+                        .toList()
+                : List.of();
+        return ResponseEntity.ok(Map.of("result", "success", "data", projectService.getProgramPairsByList(idList)));
+    }
+
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(defaultValue = "unclosed") String status,
@@ -50,6 +69,7 @@ public class ProgramController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return projectService.getById(id)
                 .filter(p -> "program".equals(p.getType()))
                 .map(p -> ResponseEntity.ok(Map.of("result", "success", "data", p)))
@@ -65,6 +85,8 @@ public class ProgramController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Project program) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         program.setId(id);
         program.setType("program");
         projectService.update(program);
@@ -73,6 +95,8 @@ public class ProgramController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (projectService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         projectService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

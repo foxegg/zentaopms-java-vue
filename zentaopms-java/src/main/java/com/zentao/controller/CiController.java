@@ -5,11 +5,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/** 与 PHP ci 一致：持续集成入口，index 返回 data 形状 */
 @RestController
 @RequestMapping("/api/ci")
 public class CiController {
-    @GetMapping({ "/list", "" })
-    public ResponseEntity<Map<String, Object>> list() { return PlaceholderResponses.emptyList(); }
+    @GetMapping({ "/index", "/list", "" })
+    public ResponseEntity<Map<String, Object>> list() {
+        return ResponseEntity.ok(Map.of("result", "success", "data", java.util.List.of()));
+    }
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable Object id) { return PlaceholderResponses.emptyView(id); }
     @PostMapping({ "/create", "" })

@@ -16,4 +16,6 @@ public interface TestSuiteRepository extends JpaRepository<TestSuite, Integer> {
     List<TestSuite> findByTypeAndProductAndDeletedOrderByOrderNumAsc(String type, int productId, int deleted);
 
     List<TestSuite> findByTypeAndProjectAndDeletedOrderByOrderNumAsc(String type, int projectId, int deleted);
+
+    List<TestSuite> findByDeletedOrderByOrderNumAsc(int deleted);
 }

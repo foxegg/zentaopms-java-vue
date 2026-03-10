@@ -19,4 +19,6 @@ public interface TestTaskRepository extends JpaRepository<TestTask, Integer> {
     Page<TestTask> findByOwnerAndDeletedOrderByIdDesc(String owner, int deleted, Pageable pageable);
 
     long countByDeleted(int deleted);
+
+    List<TestTask> findByDeletedOrderByIdDesc(int deleted);
 }

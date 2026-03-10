@@ -12,4 +12,6 @@ public interface TestReportRepository extends JpaRepository<TestReport, Integer>
     List<TestReport> findByProductAndDeletedOrderByIdDesc(int productId, int deleted);
 
     List<TestReport> findByExecutionAndDeletedOrderByIdDesc(int executionId, int deleted);
+
+    List<TestReport> findByDeletedOrderByIdDesc(int deleted);
 }

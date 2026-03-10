@@ -1,10 +1,13 @@
 import client from './client'
 
-export function getExecutionList(projectID) {
-  return client.get('/api/execution/list', { params: { projectID } }).then((r) => r.data)
+/** 与 PHP/Java 一致：projectID 未传或≤0 时后端返回空列表；type: sprint/stage/kanban/all；status: wait/doing/done/closed/undone/delayed/all */
+export function getExecutionList(projectID = 0, params = {}) {
+  const { type = 'all', status = 'all' } = params
+  return client.get('/api/execution/list', { params: { projectID, type, status } }).then((r) => r.data)
 }
 
-export function getExecutionPairs(projectID, mode = 'all') {
+/** 与 PHP 一致：projectID≤0 时返回空 */
+export function getExecutionPairs(projectID = 0, mode = 'all') {
   return client.get('/api/execution/pairs', { params: { projectID, mode } }).then((r) => r.data)
 }
 
@@ -36,6 +39,10 @@ export function activateExecution(id) {
   return client.put(`/api/execution/${id}/activate`).then((r) => r.data)
 }
 
+export function putoffExecution(id, body = {}) {
+  return client.put(`/api/execution/${id}/putoff`, body).then((r) => r.data)
+}
+
 export function deleteExecution(id) {
   return client.delete(`/api/execution/${id}`).then((r) => r.data)
 }
@@ -46,6 +53,11 @@ export function getExecutionTasks(id) {
 
 export function getExecutionTeam(id) {
   return client.get(`/api/execution/${id}/team`).then((r) => r.data)
+}
+
+/** 执行概览：tasks、builds、testTasks、team 聚合 */
+export function getExecutionSummary(id) {
+  return client.get(`/api/execution/${id}/summary`).then((r) => r.data)
 }
 
 export function getExecutionDynamic(id, params = {}) {
@@ -64,10 +76,19 @@ export function linkExecutionStory(executionId, body) {
   return client.post(`/api/execution/${executionId}/linkStory`, body).then((r) => r.data)
 }
 
+export function batchLinkExecutionStory(executionId, body) {
+  return client.post(`/api/execution/${executionId}/batchLinkStory`, body).then((r) => r.data)
+}
+
 export function unlinkExecutionStory(executionId, storyID) {
   return client.post(`/api/execution/${executionId}/unlinkStory`, { storyID }).then((r) => r.data)
 }
 
 export function batchUnlinkExecutionStory(executionId, storyIds) {
   return client.post(`/api/execution/${executionId}/batchUnlinkStory`, { storyIds }).then((r) => r.data)
+}
+
+/** 批量编辑执行；body: { executionIds: number[], fields: Record<string, any> } */
+export function batchEditExecution(body) {
+  return client.post('/api/execution/batchEdit', body).then((r) => r.data)
 }

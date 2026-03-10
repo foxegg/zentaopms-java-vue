@@ -15,7 +15,9 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,30 @@ public class TestTaskService {
 
     public List<TestTask> getByExecution(int executionId) {
         return testTaskRepository.findByExecutionAndDeletedOrderByIdDesc(executionId, 0);
+    }
+
+    /** 测试单 id→name 下拉用，与 PHP testtask getPairs(productID, executionID) 一致；product≤0 返回空；execution>0 时仅该执行下且属该产品 */
+    public Map<Integer, String> getPairs(int productId, int executionId) {
+        if (productId <= 0) return Map.of();
+        List<TestTask> list = executionId > 0
+                ? getByExecution(executionId).stream().filter(t -> productId == t.getProduct()).toList()
+                : getByProduct(productId);
+        list = list.stream().filter(t -> !"unit".equals(t.getAuto())).toList();
+        return list.stream().collect(Collectors.toMap(TestTask::getId, t -> t.getName() != null ? t.getName() : "", (a, b) -> a));
+    }
+
+    /** 按测试单 ID 列表返回 id→name，与 PHP testtask getPairsByList(taskIdList) 一致；空列表返回空 Map */
+    public Map<Integer, String> getPairsByList(List<Integer> taskIdList) {
+        if (taskIdList == null || taskIdList.isEmpty()) return Map.of();
+        List<TestTask> list = testTaskRepository.findAllById(taskIdList);
+        return list.stream()
+                .filter(t -> t.getDeleted() == 0)
+                .collect(Collectors.toMap(TestTask::getId, t -> t.getName() != null ? t.getName() : "", (a, b) -> a));
+    }
+
+    /** 全部测试单列表（未删除），无 product/project/execution 时与 PHP getList 一致 */
+    public List<TestTask> getList() {
+        return testTaskRepository.findByDeletedOrderByIdDesc(0);
     }
 
     /** 按负责人分页查询测试单，对应 PHP testtask getByUser(owner). */
@@ -137,6 +163,20 @@ public class TestTaskService {
             for (Integer caseId : caseIds) {
                 testRunRepository.deleteByTaskIdAndCaseId(taskId, caseId);
             }
+        }
+    }
+
+    /** 批量指派测试单中的用例，与 PHP testtask batchAssign 一致 */
+    @Transactional
+    public void batchAssign(int taskId, String assignedTo, List<Integer> caseIds) {
+        if (caseIds == null || assignedTo == null) return;
+        for (Integer caseId : caseIds) {
+            if (caseId == null || caseId <= 0) continue;
+            testRunRepository.findByTaskIdAndCaseId(taskId, caseId).ifPresent(run -> {
+                run.setAssignedTo(assignedTo);
+                testRunRepository.save(run);
+                actionService.create("case", caseId, "Assigned", "", assignedTo);
+            });
         }
     }
 

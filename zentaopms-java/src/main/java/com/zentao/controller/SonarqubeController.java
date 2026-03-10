@@ -25,6 +25,7 @@ public class SonarqubeController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return pipelineService.getById(id)
                 .filter(p -> TYPE_SONARQUBE.equals(p.getType()))
                 .map(p -> ResponseEntity.<Map<String, Object>>ok(Map.of("result", "success", "data", p)))
@@ -41,6 +42,7 @@ public class SonarqubeController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Pipeline p) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         p.setId(id);
         p.setType(TYPE_SONARQUBE);
         pipelineService.update(p);
@@ -49,6 +51,7 @@ public class SonarqubeController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
         pipelineService.getById(id).filter(p -> TYPE_SONARQUBE.equals(p.getType())).ifPresent(x -> pipelineService.delete(id));
         return ResponseEntity.ok(Map.of("result", "success"));
     }

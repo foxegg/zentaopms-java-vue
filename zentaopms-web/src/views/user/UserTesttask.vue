@@ -4,8 +4,8 @@
       <thead>
         <tr>
           <th>ID</th>
-          <th>名称</th>
-          <th>状态</th>
+          <th>{{ commonLang.name }}</th>
+          <th>{{ commonLang.status }}</th>
         </tr>
       </thead>
       <tbody>
@@ -17,17 +17,18 @@
       </tbody>
     </table>
     <div class="pager" v-if="pager">
-      <span>共 {{ pager.recTotal }} 条</span>
-      <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">上一页</button>
-      <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">下一页</button>
+      <span>{{ commonLang.totalCount.replace('{total}', pager.recTotal) }}</span>
+      <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">{{ commonLang.prevPage }}</button>
+      <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">{{ commonLang.nextPage }}</button>
     </div>
   </div>
-  <p v-else>加载中...</p>
+  <p v-else>{{ commonLang.loading }}</p>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { getUserTesttask } from '@/api/user'
+import { common as commonLang } from '@/lang/zh-cn'
 
 const props = defineProps({ user: Object })
 const list = ref([])

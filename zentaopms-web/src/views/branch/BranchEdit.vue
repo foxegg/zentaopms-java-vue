@@ -1,23 +1,24 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>编辑分支</h1>
-      <router-link :to="`/branch/${branchId}`" class="btn">返回详情</router-link>
+      <h1>{{ branchLang.edit }}</h1>
+      <router-link :to="`/branch/${branchId}`" class="btn">{{ commonLang.backDetail }}</router-link>
     </div>
     <div class="table-wrap" v-if="form">
+      <p v-if="errorMsg" class="text-danger">{{ errorMsg }}</p>
       <form @submit.prevent="onSubmit">
         <div class="form-group">
-          <label>名称 *</label>
+          <label>{{ branchLang.name }} *</label>
           <input v-model="form.name" required />
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting">保存</button>
-          <router-link :to="`/branch/${branchId}`" class="btn">取消</router-link>
+          <button type="submit" class="btn btn-primary" :disabled="submitting">{{ commonLang.save }}</button>
+          <router-link :to="`/branch/${branchId}`" class="btn">{{ commonLang.cancel }}</router-link>
         </div>
       </form>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else>分支不存在</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else>{{ branchLang.notFound }}</p>
   </div>
 </template>
 
@@ -25,6 +26,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getBranchById, updateBranch } from '@/api/branch'
+import { branch as branchLang, common as commonLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,13 +34,14 @@ const branchId = computed(() => Number(route.params.id))
 const form = ref(null)
 const loading = ref(true)
 const submitting = ref(false)
+const errorMsg = ref('')
 
 onMounted(async () => {
   const id = branchId.value
   loading.value = true
   try {
     const res = await getBranchById(id)
-    const b = res.data
+    const b = res?.data ?? res
     if (b) form.value = { name: b.name }
   } finally {
     loading.value = false
@@ -47,12 +50,23 @@ onMounted(async () => {
 
 async function onSubmit() {
   if (!form.value) return
+  errorMsg.value = ''
   submitting.value = true
   try {
-    await updateBranch(branchId.value, form.value)
+    const res = await updateBranch(branchId.value, form.value)
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
     router.push(`/branch/${branchId.value}`)
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style scoped>
+.text-danger { color: #c00; margin-bottom: 0.5rem; }
+</style>

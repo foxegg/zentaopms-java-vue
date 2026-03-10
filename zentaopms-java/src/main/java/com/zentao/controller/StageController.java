@@ -29,6 +29,7 @@ public class StageController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return stageService.getById(id)
                 .map(s -> ResponseEntity.ok(Map.of("result", "success", "data", s)))
                 .orElse(ResponseEntity.notFound().build());
@@ -42,6 +43,8 @@ public class StageController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Stage stage) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (stageService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         stage.setId(id);
         stageService.update(stage);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -49,6 +52,8 @@ public class StageController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (stageService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         stageService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

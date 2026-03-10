@@ -30,6 +30,7 @@ public class CompileController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return compileService.getById(id)
                 .map(c -> ResponseEntity.ok(Map.of("result", "success", "data", c)))
                 .orElse(ResponseEntity.notFound().build());
@@ -43,6 +44,8 @@ public class CompileController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Compile compile) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (compileService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         compile.setId(id);
         compileService.update(compile);
         return ResponseEntity.ok(Map.of("result", "success"));
@@ -50,6 +53,8 @@ public class CompileController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (compileService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         compileService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

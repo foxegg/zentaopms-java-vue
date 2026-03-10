@@ -1,16 +1,16 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">代码库</h1>
+      <h1 style="margin:0;">{{ repoLang.common }}</h1>
     </div>
     <div class="table-wrap" v-if="!loading">
       <table class="data-table">
         <thead>
           <tr>
             <th>ID</th>
-            <th>名称</th>
-            <th>路径</th>
-            <th>操作</th>
+            <th>{{ commonLang.name }}</th>
+            <th>{{ repoLang.path }}</th>
+            <th>{{ commonLang.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -18,19 +18,20 @@
             <td>{{ r.id }}</td>
             <td>{{ r.name || r.path }}</td>
             <td>{{ r.path || '-' }}</td>
-            <td><router-link :to="`/repo/${r.id}`" class="btn">查看</router-link></td>
+            <td><router-link :to="`/repo/${r.id}`" class="btn">{{ commonLang.view }}</router-link></td>
           </tr>
         </tbody>
       </table>
-      <p v-if="!list.length">暂无代码库</p>
+      <p v-if="!list.length">{{ repoLang.emptyTip }}</p>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getRepoList } from '@/api/repo'
+import { common as commonLang, repo as repoLang } from '@/lang/zh-cn'
 
 const list = ref([])
 const loading = ref(true)

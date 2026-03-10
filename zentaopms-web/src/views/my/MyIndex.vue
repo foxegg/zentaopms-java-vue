@@ -1,57 +1,58 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>我的地盘</h1>
+      <h1>{{ myLang.indexAction }}</h1>
     </div>
     <div v-if="!loading && data" class="my-dashboard">
       <section class="table-wrap">
-        <h3>待办</h3>
-        <p v-if="!data.todos?.length">暂无</p>
+        <h3>{{ myLang.todo }}</h3>
+        <p v-if="!data.todos?.length">{{ myLang.noData }}</p>
         <ul v-else>
           <li v-for="t in (data.todos || []).slice(0, 10)" :key="t.id">{{ t.name || t.title }}</li>
         </ul>
-        <router-link to="/my/todo">查看全部</router-link>
+        <router-link to="/my/todo">{{ myLang.viewAll }}</router-link>
       </section>
       <section class="table-wrap">
-        <h3>任务</h3>
-        <p v-if="!data.tasks?.length">暂无</p>
+        <h3>{{ myLang.task }}</h3>
+        <p v-if="!data.tasks?.length">{{ myLang.noData }}</p>
         <ul v-else>
           <li v-for="t in (data.tasks || []).slice(0, 10)" :key="t.id">{{ t.name }}</li>
         </ul>
-        <router-link to="/my/task">查看全部</router-link>
+        <router-link to="/my/task">{{ myLang.viewAll }}</router-link>
       </section>
       <section class="table-wrap">
-        <h3>Bug</h3>
-        <p v-if="!data.bugs?.length">暂无</p>
+        <h3>{{ myLang.bug }}</h3>
+        <p v-if="!data.bugs?.length">{{ myLang.noData }}</p>
         <ul v-else>
           <li v-for="b in (data.bugs || []).slice(0, 10)" :key="b.id">{{ b.title }}</li>
         </ul>
-        <router-link to="/my/bug">查看全部</router-link>
+        <router-link to="/my/bug">{{ myLang.viewAll }}</router-link>
       </section>
       <section class="table-wrap">
-        <h3>需求</h3>
-        <p v-if="!data.stories?.length">暂无</p>
+        <h3>{{ myLang.story }}</h3>
+        <p v-if="!data.stories?.length">{{ myLang.noData }}</p>
         <ul v-else>
           <li v-for="s in (data.stories || []).slice(0, 10)" :key="s.id">{{ s.title }}</li>
         </ul>
-        <router-link to="/my/story">查看全部</router-link>
+        <router-link to="/my/story">{{ myLang.viewAll }}</router-link>
       </section>
       <p>
-        <router-link to="/my/dynamic">动态</router-link> ·
-        <router-link to="/my/score">积分</router-link> ·
-        <router-link to="/my/work">工作</router-link> ·
-        <router-link to="/my/calendar">日历</router-link> ·
-        <router-link to="/my/profile">档案</router-link> ·
-        <router-link to="/my/preference">偏好</router-link>
+        <router-link to="/my/dynamic">{{ myLang.dynamic }}</router-link> ·
+        <router-link to="/my/score">{{ myLang.score }}</router-link> ·
+        <router-link to="/my/work">{{ myLang.work }}</router-link> ·
+        <router-link to="/my/calendar">{{ myLang.calendar }}</router-link> ·
+        <router-link to="/my/profile">{{ myLang.profile }}</router-link> ·
+        <router-link to="/my/preference">{{ myLang.preference }}</router-link>
       </p>
     </div>
-    <p v-else-if="loading">加载中...</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getMyIndex } from '@/api/my'
+import { my as myLang, common as commonLang } from '@/lang/zh-cn'
 
 const data = ref(null)
 const loading = ref(true)

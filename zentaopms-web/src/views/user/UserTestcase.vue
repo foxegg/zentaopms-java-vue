@@ -1,19 +1,19 @@
 <template>
   <div class="table-wrap" v-if="!loading">
     <div class="form-group">
-      <label>类型</label>
+      <label>{{ userLang.type }}</label>
       <select v-model="type" @change="load(1)">
-        <option value="case2Him">指派给我的</option>
-        <option value="caseByHim">我创建的</option>
+        <option value="case2Him">{{ userLang.case2Him }}</option>
+        <option value="caseByHim">{{ userLang.caseByHim }}</option>
       </select>
     </div>
     <table class="data-table">
       <thead>
         <tr>
           <th>ID</th>
-          <th v-if="type === 'caseByHim'">标题</th>
-          <th v-else>执行/用例</th>
-          <th>状态</th>
+          <th v-if="type === 'caseByHim'">{{ bugLang.title }}</th>
+          <th v-else>{{ commonLang.testtask }}/{{ commonLang.testcase }}</th>
+          <th>{{ commonLang.status }}</th>
         </tr>
       </thead>
       <tbody>
@@ -24,18 +24,19 @@
         </tr>
       </tbody>
     </table>
-    <div class="pager" v-if="pager">
-      <span>共 {{ pager.recTotal }} 条</span>
-      <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">上一页</button>
-      <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">下一页</button>
+    <div class="pager" v-if="pager && pager.recTotal > 0">
+      <span>{{ commonLang.totalCount.replace('{total}', pager.recTotal) }}</span>
+      <button class="btn" :disabled="pageID <= 1" @click="load(pageID - 1)">{{ commonLang.prevPage }}</button>
+      <button class="btn" :disabled="(pageID * recPerPage) >= pager.recTotal" @click="load(pageID + 1)">{{ commonLang.nextPage }}</button>
     </div>
   </div>
-  <p v-else>加载中...</p>
+  <p v-else>{{ commonLang.loading }}</p>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { getUserTestcase } from '@/api/user'
+import { common as commonLang, user as userLang, bug as bugLang } from '@/lang/zh-cn'
 
 const props = defineProps({ user: Object })
 const list = ref([])

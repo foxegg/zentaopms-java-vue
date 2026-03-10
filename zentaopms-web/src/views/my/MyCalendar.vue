@@ -1,12 +1,12 @@
 <template>
   <div>
-    <div class="page-header"><h1>我的日历</h1></div>
+    <div class="page-header"><h1>{{ myLang.calendarTitle }}</h1></div>
     <div v-if="!loading" class="table-wrap">
-      <p class="mb-2">按任务与待办的日期展示（可扩展为日历视图）</p>
+      <p class="mb-2">{{ myLang.calendarDesc }}</p>
       <section>
-        <h3>任务</h3>
+        <h3>{{ myLang.taskSection }}</h3>
         <table class="data-table" v-if="data.tasks?.length">
-          <thead><tr><th>ID</th><th>名称</th><th>开始/截止</th><th>状态</th></tr></thead>
+          <thead><tr><th>ID</th><th>{{ myLang.name }}</th><th>{{ myLang.beginDeadline }}</th><th>{{ commonLang.status }}</th></tr></thead>
           <tbody>
             <tr v-for="t in data.tasks" :key="t.id">
               <td>{{ t.id }}</td>
@@ -16,12 +16,12 @@
             </tr>
           </tbody>
         </table>
-        <p v-else>暂无任务</p>
+        <p v-else>{{ commonLang.noData }}</p>
       </section>
       <section class="mt-2">
-        <h3>待办</h3>
+        <h3>{{ myLang.todoSection }}</h3>
         <table class="data-table" v-if="data.todos?.length">
-          <thead><tr><th>ID</th><th>标题</th><th>日期</th></tr></thead>
+          <thead><tr><th>ID</th><th>{{ todoLang.name }}</th><th>{{ myLang.date }}</th></tr></thead>
           <tbody>
             <tr v-for="t in data.todos" :key="t.id">
               <td>{{ t.id }}</td>
@@ -30,16 +30,17 @@
             </tr>
           </tbody>
         </table>
-        <p v-else>暂无待办</p>
+        <p v-else>{{ commonLang.noData }}</p>
       </section>
     </div>
-    <p v-else>加载中...</p>
+    <p v-else>{{ commonLang.loading }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getMyCalendar } from '@/api/my'
+import { common as commonLang, my as myLang, todo as todoLang } from '@/lang/zh-cn'
 
 const data = ref({ tasks: [], todos: [] })
 const loading = ref(true)

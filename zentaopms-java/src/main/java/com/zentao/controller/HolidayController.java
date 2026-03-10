@@ -44,6 +44,7 @@ public class HolidayController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> view(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.notFound().build();
         return holidayService.getById(id)
                 .map(h -> ResponseEntity.ok(Map.of("result", "success", "data", h)))
                 .orElse(ResponseEntity.notFound().build());
@@ -60,6 +61,8 @@ public class HolidayController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> edit(@PathVariable int id, @RequestBody Holiday holiday) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (holidayService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         if (holiday.getEnd() != null && holiday.getBegin() != null && holiday.getBegin().isAfter(holiday.getEnd())) {
             return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "开始日期不能大于结束日期"));
         }
@@ -70,6 +73,8 @@ public class HolidayController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable int id) {
+        if (id <= 0) return ResponseEntity.badRequest().body(Map.of("result", "fail", "message", "invalid id"));
+        if (holidayService.getById(id).isEmpty()) return ResponseEntity.notFound().build();
         holidayService.delete(id);
         return ResponseEntity.ok(Map.of("result", "success"));
     }

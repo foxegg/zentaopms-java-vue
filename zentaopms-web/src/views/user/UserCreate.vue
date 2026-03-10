@@ -1,18 +1,44 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>新建用户</h1>
-      <router-link to="/user" class="btn">返回列表</router-link>
+      <h1>{{ userLang.create }}</h1>
+      <router-link to="/user" class="btn">{{ commonLang.backList }}</router-link>
     </div>
     <div class="table-wrap">
+      <p v-if="errorMsg" class="text-danger">{{ errorMsg }}</p>
       <form @submit.prevent="onSubmit">
-        <div class="form-group"><label>账号 *</label><input v-model="form.account" required /></div>
-        <div class="form-group"><label>姓名 *</label><input v-model="form.realname" required /></div>
-        <div class="form-group"><label>密码 *</label><input v-model="form.password" type="password" required /></div>
-        <div class="form-group"><label>邮箱</label><input v-model="form.email" type="email" /></div>
-        <div class="form-group"><label>部门</label><input v-model.number="form.dept" type="number" /></div>
-        <div class="form-group"><label>角色</label><input v-model="form.role" /></div>
-        <button type="submit" class="btn btn-primary">保存</button>
+        <div class="form-group">
+          <label>{{ userLang.account }} *</label>
+          <input v-model="form.account" required />
+        </div>
+        <div class="form-group">
+          <label>{{ userLang.realname }} *</label>
+          <input v-model="form.realname" required />
+        </div>
+        <div class="form-group">
+          <label>{{ userLang.password }} *</label>
+          <input v-model="form.password" type="password" required />
+        </div>
+        <div class="form-group">
+          <label>{{ userLang.password2 }} *</label>
+          <input v-model="form.password2" type="password" required />
+        </div>
+        <div class="form-group">
+          <label>{{ userLang.email }}</label>
+          <input v-model="form.email" type="email" />
+        </div>
+        <div class="form-group">
+          <label>{{ userLang.dept }}</label>
+          <input v-model.number="form.dept" type="number" />
+        </div>
+        <div class="form-group">
+          <label>{{ userLang.role }}</label>
+          <input v-model="form.role" />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" :disabled="submitting">{{ commonLang.save }}</button>
+          <router-link to="/user" class="btn">{{ commonLang.cancel }}</router-link>
+        </div>
       </form>
     </div>
   </div>
@@ -22,12 +48,43 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createUser } from '@/api/user'
+import { user as userLang, common as commonLang } from '@/lang/zh-cn'
 
 const router = useRouter()
-const form = ref({ account: '', realname: '', password: '', email: '', dept: 0, role: 'dev' })
+const form = ref({ account: '', realname: '', password: '', password2: '', email: '', dept: 0, role: 'dev' })
+const submitting = ref(false)
+const errorMsg = ref('')
 
 async function onSubmit() {
-  await createUser(form.value)
-  router.push('/user')
+  if (form.value.password !== form.value.password2) {
+    errorMsg.value = commonLang.passwordNotMatch
+    return
+  }
+  errorMsg.value = ''
+  submitting.value = true
+  try {
+    const res = await createUser({
+      account: form.value.account,
+      realname: form.value.realname,
+      password: form.value.password,
+      email: form.value.email || undefined,
+      dept: form.value.dept || undefined,
+      role: form.value.role || undefined
+    })
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
+    router.push('/user')
+  } catch (err) {
+    const msg = err.response?.data?.message || err.message || commonLang.operateFail
+    errorMsg.value = msg
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
+
+<style scoped>
+.text-danger { color: #c00; margin-bottom: 0.5rem; }
+</style>

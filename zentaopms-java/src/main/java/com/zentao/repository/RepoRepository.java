@@ -8,4 +8,6 @@ import java.util.List;
 public interface RepoRepository extends JpaRepository<Repo, Integer> {
 
     List<Repo> findByDeletedOrderByIdAsc(int deleted);
+
+    List<Repo> findByDeletedAndScmOrderByIdAsc(int deleted, String scm);
 }

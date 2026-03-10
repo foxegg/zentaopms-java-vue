@@ -16,4 +16,7 @@ public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecifi
     boolean existsByAccount(String account);
 
     List<User> findByDeptAndDeleted(int deptId, int deleted);
+
+    /** 按公司查询未删除用户，用于 Company 删除前校验 */
+    List<User> findByCompanyAndDeleted(int companyId, int deleted);
 }

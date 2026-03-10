@@ -20,7 +20,8 @@ export function deleteSpace(id) {
   return client.delete(`/api/kanban/space/${id}`).then((r) => r.data)
 }
 
-export function getKanbanList(spaceID) {
+/** spaceID≤0 时后端返回空列表 */
+export function getKanbanList(spaceID = 0) {
   return client.get('/api/kanban/list', { params: { spaceID } }).then((r) => r.data)
 }
 
@@ -42,6 +43,10 @@ export function deleteKanban(id) {
 
 export function getKanbanCards(kanbanId) {
   return client.get(`/api/kanban/${kanbanId}/cards`).then((r) => r.data)
+}
+
+export function getCardById(id) {
+  return client.get(`/api/kanban/card/${id}`).then((r) => r.data)
 }
 
 export function createCard(body) {

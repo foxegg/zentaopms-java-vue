@@ -1,25 +1,26 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>新建看板</h1>
-      <router-link :to="spaceId ? `/kanban/space/${spaceId}` : '/kanban'" class="btn">返回</router-link>
+      <h1>{{ kanbanLang.create }}</h1>
+      <router-link :to="spaceId ? `/kanban/space/${spaceId}` : '/kanban'" class="btn">{{ commonLang.backList }}</router-link>
     </div>
     <div class="table-wrap">
+      <p v-if="errorMsg" class="text-danger">{{ errorMsg }}</p>
       <form @submit.prevent="onSubmit">
         <div class="form-group">
-          <label>空间 *</label>
+          <label>{{ kanbanLang.space }} *</label>
           <select v-model.number="form.spaceID" required>
-            <option :value="0">请选择</option>
+            <option :value="0">{{ commonLang.pleaseSelect }}</option>
             <option v-for="s in spaces" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>名称 *</label>
+          <label>{{ commonLang.name }} *</label>
           <input v-model="form.name" required />
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="submitting">保存</button>
-          <router-link :to="spaceId ? `/kanban/space/${spaceId}` : '/kanban'" class="btn">取消</router-link>
+          <button type="submit" class="btn btn-primary" :disabled="submitting">{{ commonLang.save }}</button>
+          <router-link :to="spaceId ? `/kanban/space/${spaceId}` : '/kanban'" class="btn">{{ commonLang.cancel }}</router-link>
         </div>
       </form>
     </div>
@@ -30,6 +31,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { createKanban, getSpaceList } from '@/api/kanban'
+import { common as commonLang, kanban as kanbanLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,13 +39,23 @@ const spaceId = computed(() => Number(route.query.spaceID) || 0)
 const form = ref({ spaceID: 0, name: '' })
 const spaces = ref([])
 const submitting = ref(false)
+const errorMsg = ref('')
 
 async function onSubmit() {
   if (!form.value.spaceID) return
+  errorMsg.value = ''
   submitting.value = true
   try {
     const res = await createKanban({ space: form.value.spaceID, name: form.value.name })
-    router.push(`/kanban/board/${res.id}`)
+    if (res?.result === 'fail') {
+      errorMsg.value = res.message || commonLang.operateFail
+      return
+    }
+    const id = res?.id ?? res?.data?.id
+    if (id) router.push(`/kanban/board/${id}`)
+    else router.push(spaceId.value ? `/kanban/space/${spaceId.value}` : '/kanban')
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || err.message || commonLang.operateFail
   } finally {
     submitting.value = false
   }
@@ -51,7 +63,11 @@ async function onSubmit() {
 
 onMounted(async () => {
   const r = await getSpaceList()
-  spaces.value = r.data || []
+  spaces.value = r?.data ?? []
   if (spaceId.value) form.value.spaceID = spaceId.value
 })
 </script>
+
+<style scoped>
+.text-danger { color: #c00; margin-bottom: 0.5rem; }
+</style>

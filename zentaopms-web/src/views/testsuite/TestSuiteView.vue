@@ -1,32 +1,32 @@
 <template>
   <div>
     <div class="page-header" style="display:flex;align-items:center;gap:12px;">
-      <h1 style="margin:0;">测试套件详情</h1>
-      <router-link to="/testsuite" class="btn">返回列表</router-link>
-      <router-link v-if="suite" :to="`/testsuite/edit/${suite.id}`" class="btn">编辑</router-link>
+      <h1 style="margin:0;">{{ testsuiteLang.common }}</h1>
+      <router-link to="/testsuite" class="btn">{{ commonLang.backList }}</router-link>
+      <router-link v-if="suite" :to="`/testsuite/edit/${suite.id}`" class="btn">{{ commonLang.edit }}</router-link>
     </div>
     <div v-if="suite" class="table-wrap">
       <table class="data-table">
         <tr><th>ID</th><td>{{ suite.id }}</td></tr>
-        <tr><th>名称</th><td>{{ suite.name }}</td></tr>
+        <tr><th>{{ commonLang.name }}</th><td>{{ suite.name }}</td></tr>
       </table>
-      <h3>用例列表</h3>
+      <h3>{{ testsuiteLang.caseList }}</h3>
       <table class="data-table" v-if="cases.length">
         <thead>
-          <tr><th>ID</th><th>标题</th><th>操作</th></tr>
+          <tr><th>ID</th><th>{{ storyLang.title }}</th><th>{{ commonLang.actions }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="c in cases" :key="c.id">
             <td>{{ c.id }}</td>
             <td>{{ c.title }}</td>
-            <td><router-link :to="`/testcase/${c.id}`" class="btn">查看</router-link></td>
+            <td><router-link :to="`/testcase/${c.id}`" class="btn">{{ commonLang.view }}</router-link></td>
           </tr>
         </tbody>
       </table>
-      <p v-else>暂无用例</p>
+      <p v-else>{{ testsuiteLang.noCases }}</p>
     </div>
-    <p v-else-if="loading">加载中...</p>
-    <p v-else>套件不存在</p>
+    <p v-else-if="loading">{{ commonLang.loading }}</p>
+    <p v-else>{{ testsuiteLang.notFound }}</p>
   </div>
 </template>
 
@@ -34,6 +34,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getTestSuiteById, getSuiteCases } from '@/api/testsuite'
+import { common as commonLang, testsuite as testsuiteLang, story as storyLang } from '@/lang/zh-cn'
 
 const route = useRoute()
 const suite = ref(null)
