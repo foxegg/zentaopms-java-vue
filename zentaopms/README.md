@@ -1,7 +1,3 @@
-# zentaopms原版PHP
-# zentaopms-java PHP版本对应的后端代码
-# zentaopms-web PHP版本对应的vue前端代码
-
 English | [中文](Readme_zh.md)
 
 <p align="center"><a href="https://www.zentao.pm" target="_blank" rel="noopener noreferrer"><img src="doc/img/zentao-en.png" alt="ZenTao Logo"></a></p>
